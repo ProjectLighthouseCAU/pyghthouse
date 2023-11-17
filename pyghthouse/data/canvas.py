@@ -12,6 +12,9 @@ class PyghthouseCanvas:
         else:
             self.set_image(initial_image)
 
+    """
+    Flattens the list. Works for nested lists too.
+    """
     def flatten_list(self,element):
         if(type(element)==list):
             result = []
@@ -22,6 +25,11 @@ class PyghthouseCanvas:
             return [element]
 
 
+    """
+    Creates a nested list in the shape of IMAGE_SHAPE. 
+    number_cb: function
+        A function that returns an integer (or to integer castable) element.
+    """
     def init_image_array(self,number_cb=lambda: 0):
         list = []
         for x in range(self.IMAGE_SHAPE[0]):
@@ -33,7 +41,14 @@ class PyghthouseCanvas:
                 list_y.append(list_rgb)
             list.append(list_y)
         return list
-    
+
+    """
+    Parses user input to image data.
+    new_image: int | list
+        If int provided, sets all values to this number. Must be between 0 and 255.
+        If list provided, it must contain exactly as many elements as the image needs values,
+            but it may be nested in any way.
+    """
     def new_image_to_image_array(self,new_image: VALID_IMAGE_TYPE) -> list:
         if(type(new_image)==int):
             if(0<=new_image<=255):
@@ -52,6 +67,9 @@ class PyghthouseCanvas:
                 raise ValueError("Wrong length of Iterable")
         raise ValueError("Invalid input. Must be int or list")
 
+    """
+    Sets the new image.
+    """
     def set_image(self, new_image: VALID_IMAGE_TYPE) -> list:
         try:
             self.image = self.new_image_to_image_array(new_image)
@@ -60,6 +78,9 @@ class PyghthouseCanvas:
 
         return self.image
 
+    """
+    Transforms the image to byte values.
+    """
     def get_image_bytes(self)->bytes:
         b_array = bytearray()
         for x in range(self.IMAGE_SHAPE[0]):
