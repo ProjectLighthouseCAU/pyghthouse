@@ -55,7 +55,7 @@ class ImageMaker:
                        fill=tuple(from_hsv(self.hue, 1, 1)))
         output = self.img.copy()
         output.thumbnail((28, 14))
-        return np.asarray(output)
+        return np.asarray(output).tolist()
 
 
 if __name__ == '__main__':
