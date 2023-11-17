@@ -1,5 +1,7 @@
 # Pyghthouse 
 
+[![Build](https://github.com/ProjectLighthouseCAU/pyghthouse/actions/workflows/build.yml/badge.svg)](https://github.com/ProjectLighthouseCAU/pyghthouse/actions/workflows/build.yml)
+
 A Python Lighthouse Adapter
 
 (README WIP; please consult pyghthouse/ph.py for usage information.)

@@ -2,3 +2,4 @@
 .idea/*
 **/pyghthouse.egg-info/*
 dist/*
+venv

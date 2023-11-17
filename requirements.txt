@@ -1,6 +1,0 @@
-setuptools~=58.0.4
-numpy~=1.21.2
-websocket-client~=1.2.1
-msgpack~=1.0.2
-Pillow~=8.4.0
-pyghthouse>=0.2.0
