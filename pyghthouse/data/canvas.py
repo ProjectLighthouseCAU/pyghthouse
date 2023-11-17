@@ -40,22 +40,7 @@ class PyghthouseCanvas:
                 return self.init_image_array(lambda: new_image)
             else:
                 raise ValueError("Color must be 0<=color<=255")
-        # if(type(new_image)==list):
-        #     if (len(new_image)!=self.IMAGE_SHAPE[0]):
-        #                 raise ValueError("Invalid shape")
-        #     for x in range(len(new_image)):
-        #         if (len(new_image[x])!=self.IMAGE_SHAPE[1]):
-        #                 raise ValueError("Invalid shape.")
-        #         for y in range(len(new_image[x])):
-        #             if (len(new_image[x][y])!=self.IMAGE_SHAPE[2]):
-        #                 raise ValueError("Invalid shape.")
-        #             for rgb in range(len(new_image[x][y])):
-        #                 if(not(isinstance(new_image[x][y][rgb],int))):
-        #                     # try to parse all values as int here
-        #                     new_image[x][y][rgb] = int(new_image[x][y][rgb])
-        #                 if(not (0<=new_image[x][y][rgb]<=255)):
-        #                     raise ValueError(f"Pixel at {x},{y} has invalid color code.")
-        #     return new_image
+            
         if(type(new_image)==list):
             try:
                 flat = self.flatten_list(new_image)
