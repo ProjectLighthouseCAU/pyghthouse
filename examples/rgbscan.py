@@ -6,13 +6,13 @@ from pyghthouse import Pyghthouse
 
 def image_gen():
     image = np.zeros((14, 28, 3))
-    yield image
+    yield image.tolist()
     while True:
         for j in range(3):
             for x in range(14):
                 for y in range(28):
                     image[x, y, j] = 255
-                    yield image
+                    yield image.tolist()
                     image[x, y, j] = 0
 
 

@@ -18,7 +18,7 @@ def circle_generator():
                 for y in range(14):
                     rho, phi = cart2pol(x / 28 - 0.5, y / 14 - 0.5)
                     image[y, x, :] = from_hsv((phi + i / 180) % 1.0, 1-rho, i / 90 if i < 91 else 1 - (i - 90) / 90)
-            yield image
+            yield image.tolist()
 
 
 circle = circle_generator()

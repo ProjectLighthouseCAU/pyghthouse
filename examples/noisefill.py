@@ -7,15 +7,15 @@ from pyghthouse import Pyghthouse
 
 def image_gen():
     image = np.zeros((14, 28, 3))
-    yield image
+    yield image.tolist()
     while True:
         for y in range(28):
             for j in range(3):
                 image[0, y, j] = int(random() * 255)
-            yield image
+            yield image.tolist()
         image = np.roll(image, 1, 0)
         image *= 0.85
-        yield image
+        yield image.tolist()
 
 
 g = image_gen()
