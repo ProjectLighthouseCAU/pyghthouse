@@ -1,7 +1,7 @@
 from typing import Union, Iterable
-# import numpy as np
-class PyghthouseCanvas:
 
+
+class PyghthouseCanvas:
     VALID_IMAGE_TYPE = Union[Iterable, int]
     IMAGE_SHAPE = (14, 28, 3)
 
@@ -15,8 +15,9 @@ class PyghthouseCanvas:
     """
     Flattens the list. Works for nested lists too.
     """
-    def flatten_list(self,element):
-        if(type(element)==list):
+
+    def flatten_list(self, element):
+        if type(element) == list:
             result = []
             for element in element:
                 result.extend(self.flatten_list(element))
@@ -24,13 +25,13 @@ class PyghthouseCanvas:
         else:
             return [element]
 
-
     """
     Creates a nested list in the shape of IMAGE_SHAPE. 
     number_cb: function
         A function that returns an integer (or to integer castable) element.
     """
-    def init_image_array(self,number_cb=lambda: 0):
+
+    def init_image_array(self, number_cb=lambda: 0):
         list = []
         for x in range(self.IMAGE_SHAPE[0]):
             list_y = []
@@ -49,14 +50,15 @@ class PyghthouseCanvas:
         If list provided, it must contain exactly as many elements as the image needs values,
             but it may be nested in any way.
     """
-    def new_image_to_image_array(self,new_image: VALID_IMAGE_TYPE) -> list:
-        if(type(new_image)==int):
-            if(0<=new_image<=255):
+
+    def new_image_to_image_array(self, new_image: VALID_IMAGE_TYPE) -> list[int]:
+        if isinstance(new_image, int):
+            if 0 <= new_image <= 255:
                 return self.init_image_array(lambda: new_image)
             else:
                 raise ValueError("Color must be 0<=color<=255")
-            
-        if(type(new_image)==list):
+
+        if isinstance(new_image, list):
             try:
                 flat = self.flatten_list(new_image)
                 result = self.init_image_array(lambda: int(flat.pop(0)))
@@ -70,18 +72,22 @@ class PyghthouseCanvas:
     """
     Sets the new image.
     """
+
     def set_image(self, new_image: VALID_IMAGE_TYPE) -> list:
         try:
             self.image = self.new_image_to_image_array(new_image)
         except ValueError as e:
-            raise ValueError(f"{e}. Most likely, your image does not have the correct dimensions.") from None
+            raise ValueError(
+                f"{e}. Most likely, your image does not have the correct dimensions."
+            ) from None
 
         return self.image
 
     """
     Transforms the image to byte values.
     """
-    def get_image_bytes(self)->bytes:
+
+    def get_image_bytes(self) -> bytes:
         b_array = bytearray()
         for x in range(self.IMAGE_SHAPE[0]):
             for y in range(self.IMAGE_SHAPE[1]):
