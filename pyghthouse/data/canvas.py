@@ -1,12 +1,12 @@
-from typing import Union, Iterable
+from typing import Any, Union, Iterable, Callable
 
 
 class PyghthouseCanvas:
-    VALID_IMAGE_TYPE = Union[Iterable, int]
+    VALID_IMAGE_TYPE = Union[Iterable[Any], int]
     IMAGE_SHAPE = (14, 28, 3)
 
-    def __init__(self, initial_image=None):
-        self.image = self.init_image_array()
+    def __init__(self, initial_image: VALID_IMAGE_TYPE | None = None):
+        self.image: list[list[list[int]]] = self.init_image_array()
         if initial_image is None:
             self.image[:][:][0] = 255
         else:
@@ -16,11 +16,11 @@ class PyghthouseCanvas:
     Flattens the list. Works for nested lists too.
     """
 
-    def flatten_list(self, element):
-        if type(element) == list:
-            result = []
-            for element in element:
-                result.extend(self.flatten_list(element))
+    def flatten_list(self, element: list[Any] | Any) -> list[Any]:
+        if isinstance(element, list):
+            result: list[Any] = []
+            for elem in element:
+                result.extend(self.flatten_list(elem))
             return result
         else:
             return [element]
@@ -31,17 +31,19 @@ class PyghthouseCanvas:
         A function that returns an integer (or to integer castable) element.
     """
 
-    def init_image_array(self, number_cb=lambda: 0):
-        list = []
-        for x in range(self.IMAGE_SHAPE[0]):
-            list_y = []
-            for y in range(self.IMAGE_SHAPE[1]):
-                list_rgb = []
-                for rgb in range(self.IMAGE_SHAPE[2]):
+    def init_image_array(
+        self, number_cb: Callable[[], Any] = lambda: 0
+    ) -> list[list[list[int]]]:
+        list_total: list[list[list[int]]] = []
+        for _ in range(self.IMAGE_SHAPE[0]):
+            list_y: list[list[int]] = []
+            for _ in range(self.IMAGE_SHAPE[1]):
+                list_rgb: list[int] = []
+                for _ in range(self.IMAGE_SHAPE[2]):
                     list_rgb.append(int(number_cb()))
                 list_y.append(list_rgb)
-            list.append(list_y)
-        return list
+            list_total.append(list_y)
+        return list_total
 
     """
     Parses user input to image data.
@@ -51,7 +53,7 @@ class PyghthouseCanvas:
             but it may be nested in any way.
     """
 
-    def new_image_to_image_array(self, new_image: VALID_IMAGE_TYPE) -> list[int]:
+    def new_image_to_image_array(self, new_image: VALID_IMAGE_TYPE) -> list[Any]:
         if isinstance(new_image, int):
             if 0 <= new_image <= 255:
                 return self.init_image_array(lambda: new_image)
@@ -73,7 +75,7 @@ class PyghthouseCanvas:
     Sets the new image.
     """
 
-    def set_image(self, new_image: VALID_IMAGE_TYPE) -> list:
+    def set_image(self, new_image: VALID_IMAGE_TYPE) -> list[list[list[int]]]:
         try:
             self.image = self.new_image_to_image_array(new_image)
         except ValueError as e:
@@ -87,7 +89,7 @@ class PyghthouseCanvas:
     Transforms the image to byte values.
     """
 
-    def get_image_bytes(self) -> bytes:
+    def get_image_bytes(self) -> bytearray:
         b_array = bytearray()
         for x in range(self.IMAGE_SHAPE[0]):
             for y in range(self.IMAGE_SHAPE[1]):
