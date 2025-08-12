@@ -3,8 +3,6 @@ from time import time, sleep
 from threading import Thread, Event, Lock
 from signal import signal, SIGINT
 
-import numpy as np
-
 from pyghthouse.data.canvas import PyghthouseCanvas
 from pyghthouse.connection.wsconnector import WSConnector
 
@@ -236,12 +234,8 @@ class Pyghthouse:
             return self.canvas.image
 
     @staticmethod
-    def empty_image_raw():
-        return np.zeros((14, 28, 3))
-
-    @staticmethod
     def empty_image():
-        return Pyghthouse.empty_image_raw().tolist()
+        return [[[0] * 14] * 28] * 3
 
     def set_image_callback(self, image_callback):
         with self.config_lock:
