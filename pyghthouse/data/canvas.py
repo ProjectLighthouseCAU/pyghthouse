@@ -79,12 +79,13 @@ class PyghthouseCanvas:
                     value = other[y][x][rgb]
                     
                     #TODO: Decide on either throw error on wrong type or do a typecast with a warning
-                    if not isinstance(value, int) and not isinstance(value, bytes):
-                        raise TypeError(f"TypeError: Wrong type at ({y},{x},{rgb}). Type should be 'int' or 'bytes' but received '{type(value).__name__}'")
+                    #TODO: Integrate other numerical types?
+                    if not isinstance(value, int):
+                        raise TypeError(f"TypeError: Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
                     
-                    #TODO: Decide on either throw error on wrong value or change to closest value in bounds with a warning
+                    #TODO: Decide on either throw error when out of range or change to closest value in range with a warning
                     if int(value) < 0 or int(value) > 255:
-                        raise ValueError(f"ValueError: Received value {value} at ({y},{x},{rgb}) is out of bounds. Value should be a number between 0 <= value <= 255")
+                        raise ValueError(f"ValueError: Received value {value} at ({y},{x},{rgb}) is out of range. Value should be a number between 0 <= value <= 255")
 
 
     def get_image_bytes(self):
