@@ -1,5 +1,4 @@
-"""TODO: Test methods: __init__
-                       set_image
+"""TODO: Test methods: set_image
                        _check_size
                        _check_cells
                        _check_values
@@ -12,7 +11,7 @@ class PyghthouseCanvas:
         self.size = (14,28,3)
         self.image = [[[0 for k in range(self.size[2])] for j in range(self.size[1])] for i in range(self.size[0])]
         
-        if initial_image != None:
+        if initial_image is not None:
             self.set_image(initial_image)
 
 
@@ -78,8 +77,7 @@ class PyghthouseCanvas:
                     
                     value = other[y][x][rgb]
                     
-                    #TODO: Decide on either throw error on wrong type or do a typecast with a warning
-                    #TODO: Integrate other numerical types?
+                    #TODO: Decide on either throw error on wrong type or do a typecast with a warning. Which types should be allowed? All numerical or only int?
                     if not isinstance(value, int):
                         raise TypeError(f"Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
                     
