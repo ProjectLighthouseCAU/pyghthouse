@@ -10,7 +10,7 @@ class PyghthouseCanvas:
     def __init__(self, initial_image=None):
         
         self.size = (14,28,3)
-        self.image = [[[0] * self.size[2]] * self.size[1]] * self.size[1]
+        self.image = [[[0 for k in range(self.size[2])] for j in range(self.size[1])] for i in range(self.size[0])]
         
         if initial_image != None:
             self.set_image(initial_image)
@@ -22,9 +22,9 @@ class PyghthouseCanvas:
         self._check_cells(new_image)
         self._check_values(new_image)
 
-        for y in range(len(self.image)):
-            for x in range(len(self.image[0])):
-                for rgb in range(self.image[0][0]):
+        for y in range(self.size[0]):
+            for x in range(self.size[1]):
+                for rgb in range(self.size[2]):
                     
                     self.image[y][x][rgb] = new_image[y][x][rgb]
 

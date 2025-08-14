@@ -227,15 +227,12 @@ class Pyghthouse:
             self.canvas.set_image(image)
 
     def get_image(self):
-        return self.get_image_raw().tolist()
-
-    def get_image_raw(self):
         with self.connector.lock:
             return self.canvas.image
 
     @staticmethod
     def empty_image():
-        return [[[0] * 14] * 28] * 3
+        return [[[0 for k in range(3)] for j in range(28)] for i in range(14)]
 
     def set_image_callback(self, image_callback):
         with self.config_lock:
