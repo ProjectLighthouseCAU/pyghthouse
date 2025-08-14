@@ -38,11 +38,11 @@ class PyghthouseCanvas:
         
         # Catch objects like [] or 0
         except (IndexError, TypeError):
-            raise TypeError(f"TypeError: Received object with missing dimensions. Require a 3-dimensional list ")
+            raise TypeError(f"Received object with missing dimensions. Require a 3-dimensional list ")
         
         # Raise ValueError on wrong dimension size
         if self.size != other_size:
-            raise ValueError(f"ValueError: The image does not have the correct dimensions. Dimensions should be {self.size} as (y, x, rgb), but received {other_size}")
+            raise ValueError(f"The image does not have the correct dimensions. Dimensions should be {self.size} as (y, x, rgb), but received {other_size}")
             
         
     
@@ -54,19 +54,19 @@ class PyghthouseCanvas:
             try:
                 
                 if len(other[y]) != self.size[1]:
-                    raise IndexError(f"ValueError: RGB list size shoule be {self.size[1]} but received {len(other[y])} at [{y}]")
+                    raise IndexError(f"RGB list size shoule be {self.size[1]} but received {len(other[y])} at [{y}]")
             
             except (TypeError):
-                raise TypeError(f"TypeError: Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'")
+                raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'")
                 
             for x in range(self.size[1]):
                 try:
                     
                     if len(other[y][x]) != self.size[2]:
-                        raise IndexError(f"ValueError: RGB list size shoule be {self.size[2]} but received {len(other[y][x])} at [{y}][{x}]")
+                        raise IndexError(f"RGB list size shoule be {self.size[2]} but received {len(other[y][x])} at [{y}][{x}]")
                 
                 except (TypeError):
-                    raise TypeError(f"TypeError: Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'")
+                    raise TypeError(f"Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'")
         
 
 
@@ -81,11 +81,11 @@ class PyghthouseCanvas:
                     #TODO: Decide on either throw error on wrong type or do a typecast with a warning
                     #TODO: Integrate other numerical types?
                     if not isinstance(value, int):
-                        raise TypeError(f"TypeError: Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
+                        raise TypeError(f"Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
                     
                     #TODO: Decide on either throw error when out of range or change to closest value in range with a warning
                     if int(value) < 0 or int(value) > 255:
-                        raise ValueError(f"ValueError: Received value {value} at ({y},{x},{rgb}) is out of range. Value should be a number between 0 <= value <= 255")
+                        raise ValueError(f"Received value {value} at ({y},{x},{rgb}) is out of range. Value should be a number between 0 <= value <= 255")
 
 
     def get_image_bytes(self):
