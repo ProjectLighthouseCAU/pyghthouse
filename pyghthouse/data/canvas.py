@@ -54,7 +54,7 @@ class PyghthouseCanvas:
             try:
                 
                 if len(other[y]) != self.size[1]:
-                    raise IndexError(f"RGB list size shoule be {self.size[1]} but received {len(other[y])} at [{y}]")
+                    raise IndexError(f"x list size should be {self.size[1]} but received {len(other[y])} at [{y}]")
             
             except (TypeError):
                 raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'")
@@ -63,7 +63,7 @@ class PyghthouseCanvas:
                 try:
                     
                     if len(other[y][x]) != self.size[2]:
-                        raise IndexError(f"RGB list size shoule be {self.size[2]} but received {len(other[y][x])} at [{y}][{x}]")
+                        raise IndexError(f"RGB list size should be {self.size[2]} but received {len(other[y][x])} at [{y}][{x}]")
                 
                 except (TypeError):
                     raise TypeError(f"Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'")
