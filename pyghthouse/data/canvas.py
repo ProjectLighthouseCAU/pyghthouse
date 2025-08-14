@@ -1,9 +1,3 @@
-"""TODO: Test methods: set_image
-                       _check_size
-                       _check_cells
-                       _check_values
-                       get_image_bytes
-"""
 class PyghthouseCanvas:
 
     def __init__(self, initial_image=None):
@@ -25,7 +19,7 @@ class PyghthouseCanvas:
             for x in range(self.size[1]):
                 for rgb in range(self.size[2]):
                     
-                    self.image[y][x][rgb] = new_image[y][x][rgb]
+                    self.image[y][x][rgb] = int(new_image[y][x][rgb])
 
         return self.image
 
@@ -49,11 +43,12 @@ class PyghthouseCanvas:
         
         # Catch objects like [[[0,1,2],[0,1,2,3,4,5],[1]],1]
         # TODO: Decide on either throw error on too large lists or do a warning
+        # TODO: Decide on either try-except block or TypeCheck
         for y in range(self.size[0]):
             try:
                 
                 if len(other[y]) != self.size[1]:
-                    raise IndexError(f"x list size should be {self.size[1]} but received {len(other[y])} at [{y}]")
+                    raise IndexError(f"x-list size should be {self.size[1]} but received {len(other[y])} at position [{y}]")
             
             except (TypeError):
                 raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'")
@@ -62,7 +57,7 @@ class PyghthouseCanvas:
                 try:
                     
                     if len(other[y][x]) != self.size[2]:
-                        raise IndexError(f"RGB list size should be {self.size[2]} but received {len(other[y][x])} at [{y}][{x}]")
+                        raise IndexError(f"RGB-list size should be {self.size[2]} but received {len(other[y][x])} at position [{y}][{x}]")
                 
                 except (TypeError):
                     raise TypeError(f"Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'")
@@ -77,11 +72,12 @@ class PyghthouseCanvas:
                     
                     value = other[y][x][rgb]
                     
-                    #TODO: Decide on either throw error on wrong type or do a typecast with a warning. Which types should be allowed? All numerical or only int?
+                    # TODO: Decide on either throw error on wrong type or do a typecast with a warning. 
+                    #       Which types should be allowed? All numerical or only int?
                     if not isinstance(value, int):
                         raise TypeError(f"Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
                     
-                    #TODO: Decide on either throw error when out of range or change to closest value in range with a warning
+                    # TODO: Decide on either throw error when out of range or change to closest value in range with a warning
                     if int(value) < 0 or int(value) > 255:
                         raise ValueError(f"Received value {value} at ({y},{x},{rgb}) is out of range. Value should be a number between 0 <= value <= 255")
 
