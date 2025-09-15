@@ -1,3 +1,4 @@
+# TODO: Remove unused imports
 from enum import Enum
 from time import time, sleep
 from threading import Thread, Event, Lock
@@ -5,6 +6,7 @@ from signal import signal, SIGINT
 
 from pyghthouse.data.canvas import PyghthouseCanvas
 from pyghthouse.connection.wsconnector import WSConnector
+from pyghthouse.controller.PHThread import PHThread
 
 
 class VerbosityLevel(Enum):
@@ -138,30 +140,6 @@ class Pyghthouse:
     (https://github.com/ProjectLighthouseCAU/pyghthouse/tree/master/examples).
     """
 
-    class PHMessageHandler:
-
-        def __init__(self, verbosity=VerbosityLevel.WARN_ONCE):
-            self.verbosity = verbosity
-            self.warned_already = False
-
-        def reset(self):
-            self.warned_already = False
-
-        def handle(self, msg):
-            if msg['RNUM'] == 200:
-                if self.verbosity == VerbosityLevel.ALL:
-                    print(msg)
-            elif self.verbosity == VerbosityLevel.WARN:
-                self.print_warning(msg)
-            elif self.verbosity == VerbosityLevel.WARN_ONCE and not self.warned_already:
-                self.print_warning(msg)
-                self.warned_already = True
-
-        @staticmethod
-        def print_warning(msg):
-            print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
-
-
     def __init__(self, username: str, token: str, address: str = "wss://lighthouse.uni-kiel.de/websocket",
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
                  ignore_ssl_cert=False):
@@ -183,12 +161,13 @@ class Pyghthouse:
     def connect(self):
         self.connector.start()
 
+    # TODO: Block main-thread from continue running until all threads finished starting
     def start(self):
         if not self.connector.running:
             self.connect()
         self.stop()
         self.msg_handler.reset()
-        self.ph_thread = self.PHThread(self)
+        self.ph_thread = PHThread(self)
         self.ph_thread.start()
 
     def stop(self):
@@ -216,6 +195,7 @@ class Pyghthouse:
         with self.config_lock:
             self.image_callback = image_callback
 
+    # TODO: Remove method or apply frame_rate check
     def set_frame_rate(self, frame_rate):
         with self.config_lock:
             self.send_interval = 1.0 / frame_rate

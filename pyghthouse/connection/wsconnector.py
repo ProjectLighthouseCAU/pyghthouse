@@ -3,8 +3,32 @@ from websocket import WebSocketApp, setdefaulttimeout, ABNF
 from msgpack import packb, unpackb
 from ssl import CERT_NONE
 
+from ..ph import VerbosityLevel
 
 class WSConnector:
+
+    class PHMessageHandler:
+
+        def __init__(self, verbosity=VerbosityLevel.WARN_ONCE):
+            self.verbosity = verbosity
+            self.warned_already = False
+
+        def reset(self):
+            self.warned_already = False
+
+        def handle(self, msg):
+            if msg['RNUM'] == 200:
+                if self.verbosity == VerbosityLevel.ALL:
+                    print(msg)
+            elif self.verbosity == VerbosityLevel.WARN:
+                self.print_warning(msg)
+            elif self.verbosity == VerbosityLevel.WARN_ONCE and not self.warned_already:
+                self.print_warning(msg)
+                self.warned_already = True
+
+        @staticmethod
+        def print_warning(msg):
+            print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
 
     class REID:
         def __init__(self):
@@ -18,11 +42,12 @@ class WSConnector:
         def __iter__(self):
             return self
 
-    def __init__(self, username: str, token: str, address: str, on_msg=None, ignore_ssl_cert=False, timeout=10):
+    def __init__(self, username: str, token: str, address: str, verbosity=VerbosityLevel.WARN_ONCE, ignore_ssl_cert=False, timeout=10):
         self.username = username
         self.token = token
         self.address = address
-        self.on_msg = on_msg
+        self.message_handler = self.PHMessageHandler(verbosity)
+        self.on_msg = self.PHMessageHandler.handle()
         self.ws = None
         self.lock = Lock()
         self.reid = self.REID()
