@@ -18,7 +18,7 @@ class WSConnector:
         def __iter__(self):
             return self
 
-    def __init__(self, username: str, token: str, address: str, on_msg=None, ignore_ssl_cert=False):
+    def __init__(self, username: str, token: str, address: str, on_msg=None, ignore_ssl_cert=False, timeout=10):
         self.username = username
         self.token = token
         self.address = address
@@ -28,11 +28,14 @@ class WSConnector:
         self.reid = self.REID()
         self.running = False
         self.ignore_ssl_cert = ignore_ssl_cert
-        setdefaulttimeout(60)
+        self.timeout = 10
+        if timeout > 0:
+            self.timeout = timeout
+        setdefaulttimeout(self.timeout)
 
     def send(self, data):
         with self.lock:
-            self.ws.send(packb(self.construct_package(data), use_bin_type=True), opcode=ABNF.OPCODE_BINARY)
+            self.ws.send_bytes(self.construct_package(data))
 
     def start(self):
         self.stop()
@@ -68,7 +71,7 @@ class WSConnector:
         self.on_msg(msg)
 
     def construct_package(self, payload_data):
-        return {
+        data = {
             'REID': next(self.reid),
             'AUTH': {'USER': self.username, 'TOKEN': self.token},
             'VERB': 'PUT',
@@ -76,3 +79,10 @@ class WSConnector:
             'META': {},
             'PAYL': payload_data
         }
+        return packb(self.construct_package(data), use_bin_type=True)
+    
+    def set_timeout(self, timeout=10):
+        self.timeout = 10
+        if timeout > 0:
+            self.timeout = timeout
+        setdefaulttimeout(self.timeout)
