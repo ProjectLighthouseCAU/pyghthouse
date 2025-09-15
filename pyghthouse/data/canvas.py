@@ -1,9 +1,12 @@
+from threading import Lock
+
 class PyghthouseCanvas:
     
     IMAGE_SHAPE = (14, 28, 3)
     
     def __init__(self, initial_image=None):
         
+        self.lock = Lock()
         self.image = [[[0 for k in range(self.IMAGE_SHAPE[2])] for j in range(self.IMAGE_SHAPE[1])] for i in range(self.IMAGE_SHAPE[0])]
         
         if initial_image is not None:
@@ -16,11 +19,13 @@ class PyghthouseCanvas:
         self._check_cells(new_image)
         self._check_values(new_image)
 
-        for y in range(self.IMAGE_SHAPE[0]):
-            for x in range(self.IMAGE_SHAPE[1]):
-                for rgb in range(self.IMAGE_SHAPE[2]):
-                    
-                    self.image[y][x][rgb] = int(new_image[y][x][rgb])
+        with self.lock:
+
+            for y in range(self.IMAGE_SHAPE[0]):
+                for x in range(self.IMAGE_SHAPE[1]):
+                    for rgb in range(self.IMAGE_SHAPE[2]):
+
+                        self.image[y][x][rgb] = int(new_image[y][x][rgb])
 
         return self.image
     
@@ -29,10 +34,12 @@ class PyghthouseCanvas:
         
         image_bytes = b''
         
-        for y in range(self.IMAGE_SHAPE[0]):
-            for x in range(self.IMAGE_SHAPE[1]):
-                
-                image_bytes += bytes(self.image[y][x])
+        with self.lock:
+        
+            for y in range(self.IMAGE_SHAPE[0]):
+                for x in range(self.IMAGE_SHAPE[1]):
+                    
+                    image_bytes += bytes(self.image[y][x])
         
         return image_bytes
 
