@@ -161,28 +161,6 @@ class Pyghthouse:
         def print_warning(msg):
             print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
 
-    class PHThread(Thread):
-
-        def __init__(self, parent):
-            super().__init__()
-            self.parent = parent
-            self._stop_event = Event()
-
-        def stop(self):
-            self._stop_event.set()
-
-        def stopped(self):
-            return self._stop_event.is_set()
-
-        def run(self):
-            while not self.stopped():
-                with self.parent.config_lock:
-                    sleep_time = self.parent.send_interval - (time() % self.parent.send_interval)
-                    sleep(sleep_time)
-                    if self.parent.image_callback is not None:
-                        image_from_callback = self.parent.image_callback()
-                        self.parent.set_image(image_from_callback)
-                    self.parent.connector.send(self.parent.canvas.get_image_bytes())
 
     def __init__(self, username: str, token: str, address: str = "wss://lighthouse.uni-kiel.de/websocket",
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
