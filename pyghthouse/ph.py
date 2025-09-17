@@ -5,17 +5,10 @@ from threading import Thread, Event, Lock
 from signal import signal, SIGINT
 
 from pyghthouse.data.canvas import PyghthouseCanvas
-from pyghthouse.connection.wsconnector import WSConnector
 from pyghthouse.controller.PHThread import PHThread
+from pyghthouse.connection.wsconnector import VerbosityLevel
 
-
-class VerbosityLevel(Enum):
-    NONE = 0
-    WARN_ONCE = 1
-    WARN = 2
-    ALL = 3
-
-
+# TODO: Adjust description and example for more clarity
 class Pyghthouse:
     """
     A Python Lighthouse adapter.
@@ -143,63 +136,78 @@ class Pyghthouse:
     def __init__(self, username: str, token: str, address: str = "wss://lighthouse.uni-kiel.de/websocket",
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
                  ignore_ssl_cert=False):
+        
         if frame_rate > 60.0 or frame_rate <= 0:
-            raise ValueError("Frame rate must be greater than 0 and at most 60.")
-        self.username = username
-        self.token = token
-        self.address = address
-        self.send_interval = 1.0 / frame_rate
-        self.image_callback = image_callback
+            raise ValueError("frame rate must be greater than 0 and at most 60.")
+        
+        send_interval = 1.0 / frame_rate
         self.canvas = PyghthouseCanvas()
-        self.msg_handler = self.PHMessageHandler(verbosity)
-        self.connector = WSConnector(username, token, address, on_msg=self.msg_handler.handle,
-                                     ignore_ssl_cert=ignore_ssl_cert)
-        self.config_lock = Lock()
-        self.ph_thread = None
+        self.ph_thread = PHThread(send_interval, image_callback, self.canvas,
+                                  username, token, address, verbosity, ignore_ssl_cert)
+        
+        self.ready = self.ph_thread.ready
         signal(SIGINT, self._handle_sigint)
 
-    def connect(self):
-        self.connector.start()
 
-    # TODO: Block main-thread from continue running until all threads finished starting
     def start(self):
-        if not self.connector.running:
-            self.connect()
-        self.stop()
-        self.msg_handler.reset()
-        self.ph_thread = PHThread(self)
-        self.ph_thread.start()
 
-    def stop(self):
-        if self.ph_thread is not None:
-            self.ph_thread.stop()
-            self.ph_thread.join()
+        if self.ready.is_set() == True:
+            
+            # TODO: Raise exception and stop or give a warning?
+            self.close()
+            raise RuntimeError("Pyghthouse can only be started once")
+        
+        else:
+            
+            self.ph_thread.start()
+            self.ready.wait()
 
-    def close(self):
-        self.stop()
-        self.connector.stop()
 
     def set_image(self, image):
-        with self.connector.lock:
+        
+        if not self.ready.is_set():
+            raise RuntimeError("cannot set an image before Pyghthouse started")
+        
+        try:
             self.canvas.set_image(image)
+        
+        except:
+            self.close()
+            raise
 
-    def get_image(self):
-        with self.connector.lock:
-            return self.canvas.image
+
+    def close(self):
+        
+        if self.ready.is_set():
+            
+            self.ph_thread.stop()
+            self.ph_thread.join()
+        
+        else:
+            raise RuntimeError("cannot stop Pyghthouse before it started")
+
 
     @staticmethod
     def empty_image():
         return [[[0 for k in range(3)] for j in range(28)] for i in range(14)]
 
-    def set_image_callback(self, image_callback):
-        with self.config_lock:
-            self.image_callback = image_callback
-
-    # TODO: Remove method or apply frame_rate check
-    def set_frame_rate(self, frame_rate):
-        with self.config_lock:
-            self.send_interval = 1.0 / frame_rate
 
     def _handle_sigint(self, sig, frame):
         self.close()
         raise SystemExit(0)
+    
+
+    # TODO: Remove method or change return to thread safe copy
+    def get_image(self):
+        return self.canvas.image
+
+
+    # TODO: Remove method or update the thread
+    def set_image_callback(self, image_callback):
+        self.image_callback = image_callback
+
+
+    # TODO: Remove method or apply frame_rate check and update interval of the thread
+    def set_frame_rate(self, frame_rate):
+        self.send_interval = 1.0 / frame_rate
+

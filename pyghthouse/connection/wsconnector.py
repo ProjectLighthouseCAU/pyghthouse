@@ -2,8 +2,13 @@ from threading import Thread, Lock
 from websocket import WebSocketApp, setdefaulttimeout, ABNF
 from msgpack import packb, unpackb
 from ssl import CERT_NONE
+from enum import Enum
 
-from ..ph import VerbosityLevel
+class VerbosityLevel(Enum):
+        NONE = 0
+        WARN_ONCE = 1
+        WARN = 2
+        ALL = 3
 
 class WSConnector:
 

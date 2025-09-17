@@ -2,8 +2,7 @@ from threading import Thread, Event, main_thread
 from time import sleep, time
 
 from pyghthouse.data.canvas import PyghthouseCanvas
-from pyghthouse.connection.wsconnector import WSConnector
-from ..ph import VerbosityLevel
+from pyghthouse.connection.wsconnector import WSConnector, VerbosityLevel
 
 class PHThread(Thread):
 
@@ -12,9 +11,10 @@ class PHThread(Thread):
         self.send_interval = send_interval
         self.callback = image_callback
         self.canvas = canvas
+        self.ready = Event()
+        self._stop_event = Event()
         self.connector = WSConnector(username, token, address, 
                                      verbosity, ignore_ssl_cert)
-        self._stop_event = Event()
         self.main_thread = main_thread()
         
         self.ignore_main = False
@@ -37,6 +37,7 @@ class PHThread(Thread):
     def run(self):
         self.connect()
         
+        self.ready.set()
         while not self.stopped():
             sleep_time = self.send_interval - (time() % self.send_interval)
             sleep(sleep_time)
