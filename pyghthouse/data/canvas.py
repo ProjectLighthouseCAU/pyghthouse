@@ -30,7 +30,7 @@ class PyghthouseCanvas:
         return self.image
     
 
-    def get_image_bytes(self):
+    def get_bytes_image(self):
         
         image_bytes = b''
         
@@ -42,6 +42,21 @@ class PyghthouseCanvas:
                     image_bytes += bytes(self.image[y][x])
         
         return image_bytes
+    
+
+    def copy_image(self):
+
+        image_copy = [[[0 for k in range(self.IMAGE_SHAPE[2])] for j in range(self.IMAGE_SHAPE[1])] for i in range(self.IMAGE_SHAPE[0])]
+
+        with self.lock:
+
+            for y in range(self.IMAGE_SHAPE[0]):
+                for x in range(self.IMAGE_SHAPE[1]):
+                    for rgb in range(self.IMAGE_SHAPE[2]):
+
+                        image_copy[y][x][rgb] = self.image[y][x][rgb]
+
+        return image_copy
 
 
     def _check_size(self, other: list):
@@ -51,7 +66,7 @@ class PyghthouseCanvas:
         
         # Catch objects like [] or 0
         except (IndexError, TypeError):
-            raise TypeError(f"Received object with missing dimensions. Require a 3-dimensional list ")
+            raise TypeError(f"Received object with missing dimensions. Require a 3-dimensional list ") from None
         
         # Raise ValueError on wrong dimension size
         if self.IMAGE_SHAPE != other_size:
@@ -71,7 +86,7 @@ class PyghthouseCanvas:
                     raise IndexError(f"x-list size should be {self.IMAGE_SHAPE[1]} but received {len(other[y])} at position [{y}]")
             
             except (TypeError):
-                raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'")
+                raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'") from None
                 
             for x in range(self.IMAGE_SHAPE[1]):
                 try:
@@ -80,7 +95,7 @@ class PyghthouseCanvas:
                         raise IndexError(f"RGB-list size should be {self.IMAGE_SHAPE[2]} but received {len(other[y][x])} at position [{y}][{x}]")
                 
                 except (TypeError):
-                    raise TypeError(f"Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'")
+                    raise TypeError(f"Require type 'list' at [{y}][{x}], but received object of type '{type(other[y][x]).__name__}'") from None
         
 
 

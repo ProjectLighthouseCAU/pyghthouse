@@ -1,8 +1,5 @@
-# TODO: Remove unused imports
-from enum import Enum
-from time import time, sleep
-from threading import Thread, Event, Lock
 from signal import signal, SIGINT
+from warnings import depricated
 
 from pyghthouse.data.canvas import PyghthouseCanvas
 from pyghthouse.controller.PHThread import PHThread
@@ -195,19 +192,36 @@ class Pyghthouse:
     def _handle_sigint(self, sig, frame):
         self.close()
         raise SystemExit(0)
-    
 
-    # TODO: Remove method or change return to thread safe copy
+
     def get_image(self):
-        return self.canvas.image
+        return self.canvas.copy_image()
 
 
-    # TODO: Remove method or update the thread
+    @depricated
+    def get_image_raw(self):
+        return self.get_image()
+
+    @depricated
+    @staticmethod
+    def empty_image_raw():
+        return Pyghthouse.empty_image()
+    
+    @depricated
     def set_image_callback(self, image_callback):
-        self.image_callback = image_callback
+        self.ph_thread.callback = image_callback
 
-
-    # TODO: Remove method or apply frame_rate check and update interval of the thread
+    @depricated
     def set_frame_rate(self, frame_rate):
-        self.send_interval = 1.0 / frame_rate
+        if frame_rate > 60.0 or frame_rate <= 0:
+            self.close()
+            raise ValueError("frame rate must be greater than 0 and at most 60.")
+        self.ph_thread.send_interval = 1.0 / frame_rate
 
+    @depricated
+    def connect(self):
+        return self.start()
+    
+    @depricated
+    def stop(self):
+        return self.close()
