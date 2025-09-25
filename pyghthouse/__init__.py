@@ -1,2 +1,2 @@
 from pyghthouse.ph import Pyghthouse
-from pyghthouse.connection.wsconnector import VerbosityLevel
+from pyghthouse.connection.data import VerbosityLevel

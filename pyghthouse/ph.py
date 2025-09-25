@@ -1,8 +1,8 @@
 from signal import signal, SIGINT
 
-from pyghthouse.data.canvas import PyghthouseCanvas
-from pyghthouse.controller.PHThread import PHThread
-from pyghthouse.connection.wsconnector import VerbosityLevel
+from .data.canvas import PyghthouseCanvas
+from .thread import PHThread
+from .connection.wsconnector import VerbosityLevel
 
 # TODO: Adjust description and example for more clarity
 class Pyghthouse:

@@ -2,60 +2,22 @@ from threading import Thread, Lock
 from websocket import WebSocketApp, setdefaulttimeout, ABNF
 from msgpack import packb, unpackb
 from ssl import CERT_NONE
-from enum import Enum
 
-class VerbosityLevel(Enum):
-        NONE = 0
-        WARN_ONCE = 1
-        WARN = 2
-        ALL = 3
+from .data import REID
+from .data import VerbosityLevel
+from .handler import PHMessageHandler
 
 class WSConnector:
-
-    class PHMessageHandler:
-
-        def __init__(self, verbosity=VerbosityLevel.WARN_ONCE):
-            self.verbosity = verbosity
-            self.warned_already = False
-
-        def reset(self):
-            self.warned_already = False
-
-        def handle(self, msg):
-            if msg['RNUM'] == 200:
-                if self.verbosity == VerbosityLevel.ALL:
-                    print(msg)
-            elif self.verbosity == VerbosityLevel.WARN:
-                self.print_warning(msg)
-            elif self.verbosity == VerbosityLevel.WARN_ONCE and not self.warned_already:
-                self.print_warning(msg)
-                self.warned_already = True
-
-        @staticmethod
-        def print_warning(msg):
-            print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
-
-    class REID:
-        def __init__(self):
-            self._next = 0
-
-        def __next__(self):
-            n = self._next
-            self._next += 1
-            return n
-
-        def __iter__(self):
-            return self
 
     def __init__(self, username: str, token: str, address: str, verbosity=VerbosityLevel.WARN_ONCE, ignore_ssl_cert=False, timeout=10):
         self.username = username
         self.token = token
         self.address = address
-        self.message_handler = self.PHMessageHandler(verbosity)
-        self.on_msg = self.PHMessageHandler.handle()
+        self.message_handler = PHMessageHandler(verbosity)
+        self.on_msg = PHMessageHandler.handle()
         self.ws = None
         self.lock = Lock()
-        self.reid = self.REID()
+        self.reid = REID()
         self.running = False
         self.ignore_ssl_cert = ignore_ssl_cert
         self.timeout = 10

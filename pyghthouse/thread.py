@@ -1,8 +1,8 @@
 from threading import Thread, Event, main_thread
 from time import sleep, time
 
-from pyghthouse.data.canvas import PyghthouseCanvas
-from pyghthouse.connection.wsconnector import WSConnector, VerbosityLevel
+from .data.canvas import PyghthouseCanvas
+from .connection.wsconnector import WSConnector, VerbosityLevel
 
 class PHThread(Thread):
 
@@ -67,9 +67,11 @@ class PHThread(Thread):
 
     # TODO: Start websocket connection and wait until websocket is open
     def connect(self):
+        self.connector.start()
         pass
 
     
     # TODO: Signal websocket to close connection
     def disconnect(self):
+        self.connector.stop()
         pass
