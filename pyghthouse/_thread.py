@@ -31,14 +31,6 @@ class PHThread(Thread):
 
         stop_event : Event
             Indicates when the Pyghthouse routine should be stopped.
-
-        Methods
-        -------
-            **run()**
-            Starts Pyghthouse-Thread routine. This routine sends images in the selected interval.
-
-            **stop()**
-            Ends Pyghthouse routine.
         """
 
     def __init__(self, send_interval, image_callback, canvas:PyghthouseCanvas, username:str, token:str, address:str, verbosity:VerbosityLevel, ignore_ssl_cert:bool):
@@ -54,7 +46,7 @@ class PHThread(Thread):
             Each frame will send the currently stored image in canvas.
 
         image_callback : function() -> image, optional
-            Function to produce a new image each frame. \n
+            Function to produce a new image each frame.
             When *None* given, the image saved in *canvas* will be used instead.
             Default is *None*.
         """
@@ -121,7 +113,9 @@ class PHThread(Thread):
 
 
     def _get_callback_image(self):
-        
+        """
+        Get image from callback function.
+        """
         image_from_callback = self.callback()
         try:
             self.canvas.set_image(image_from_callback)
