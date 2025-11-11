@@ -2,7 +2,7 @@ from threading import Thread, Event, main_thread
 from time import sleep, time
 
 from .data.canvas import PyghthouseCanvas
-from .connection.wsconnector import WSConnector, VerbosityLevel
+from .connection.wsconnector_new import WSConnector, VerbosityLevel
 
 class PHThread(Thread):
     """
@@ -11,7 +11,11 @@ class PHThread(Thread):
         The Pyghthouse routine consists of the following phases:
         - Connection Phase: Connects the client to the webserver.
         - Main routine:     Loop for sending frames to the webserver.
-        - Ending Phase:     Correctly closes the connection.
+        - Ending Phase:     Closes the connection and cleanup threads.
+
+        In the main routine, this thread will build and send frames from 
+        **canvas**. The time between each frame is indicated by 
+        **send_interval**.
 
         Attributes
         ----------
@@ -19,11 +23,11 @@ class PHThread(Thread):
             Time (in seconds) between each frame.
         
         canvas : PyghthouseCanvas
-            Each frame will send the currently stored image in canvas.
+            Each frame will send the currently stored image in **canvas**.
 
         image_callback : function() -> image, optional
             Function to produce a new image each frame.
-            When *None* given, the image saved in *canvas* will be used instead.
+            When *None* given, the image saved in **canvas** will be used instead.
             Default is *None*.
 
         ready : Event
@@ -31,9 +35,13 @@ class PHThread(Thread):
 
         stop_event : Event
             Indicates when the Pyghthouse routine should be stopped.
+
+        error : Event
+            Event flag is set to **True** when an error accured inside the pyghthouse routine.
         """
 
-    def __init__(self, send_interval, image_callback, canvas:PyghthouseCanvas, username:str, token:str, address:str, verbosity:VerbosityLevel, ignore_ssl_cert:bool):
+    def __init__(self, send_interval, image_callback, canvas:PyghthouseCanvas, 
+                 username:str, token:str, address:str, verbosity:VerbosityLevel, ignore_ssl_cert:bool, timeout=3):
         """
         Initialize thread for Pyghthouse routine.
 
@@ -43,72 +51,96 @@ class PHThread(Thread):
             Time (in seconds) between each frame.
         
         canvas : PyghthouseCanvas
-            Each frame will send the currently stored image in canvas.
+            Each frame will send the currently stored image in **canvas**.
 
         image_callback : function() -> image, optional
             Function to produce a new image each frame.
-            When *None* given, the image saved in *canvas* will be used instead.
+            When *None* given, the image saved in **canvas** will be used instead.
             Default is *None*.
         """
         super().__init__()
         self.send_interval = send_interval
         self.callback = image_callback
         self.canvas = canvas
+        self.verbosity = verbosity
 
         self.connector = WSConnector(username, token, address, 
-                                     verbosity, ignore_ssl_cert)
+                                     verbosity, ignore_ssl_cert, timeout=timeout)
         
-        self.ready = self.connector.connected
+        self.ready = Event()
         self.stop_event = Event()
+        self.error = Event()
+        self.exception = None
         
         # Used to react to unexpected end of main
         self.main_thread = main_thread()
         
-        self.ignore_main = False
-        if self.callback is not None:
-            self.ignore_main = True
 
 
     def stop(self):
         """
         Ends Pyghthouse routine.
         """
-        self._stop_event.set()
+        self.stop_event.set()
 
 
-    def _close(self):
+    def _is_stop(self):
         """
-        Ends Pyghthouse routine when *stop_event* is set or upon unexpected end of main.
+        Ends Pyghthouse routine when **stop_event** is set or upon unexpected
+        end of main.
+
+        Errors inside the routine also results into the stopping process.
         """
-        if not self.ignore_main and not self.main_thread.is_alive():
+        if self.stop_event.is_set():
+            return True
+        
+        if self.connector.error.is_set():
+            return True
+        
+        if not self.main_thread.is_alive():
+            if self.verbosity == VerbosityLevel.ALL:
+                print("Main thread dead.")
+            
             return True
        
-        return self._stop_event.is_set()
+        return False
 
 
     def run(self):
         """
         Starts Pyghthouse-Thread routine. This routine sends images in the selected interval.
         """
-        self._connect()
+        if self.verbosity == VerbosityLevel.ALL:
+            print("Starting Pyghthouse routine.")
         
+        self._connect()
         self.ready.set()
-        while not self._close():
+        
+        while not self._is_stop():
+
+            self._send_image()
+
             sleep_time = self.send_interval - (time() % self.send_interval)
             sleep(sleep_time)
-            self._send_image()
         
+        if self.verbosity == VerbosityLevel.ALL:
+            print("Ending Pyghthouse routine.")
+        
+        self.ready.clear()
         self._disconnect()
         
 
     def _send_image(self):
         """
-        Build and send current frame
+        Build and send current frame.
+
+        If error accures in sending process, the connection will be closed.
         """
         if self.callback is not None:
             self._get_callback_image()
 
         bytes_image = self.canvas.get_bytes_image()
+        
         self.connector.send(bytes_image)
 
 
@@ -117,17 +149,31 @@ class PHThread(Thread):
         Get image from callback function.
         """
         image_from_callback = self.callback()
+        
         try:
             self.canvas.set_image(image_from_callback)
-        except:
-            self._disconnect()
-            raise
+        
+        except Exception as exception:
+            self.exception = exception
+            self.error.set()
+            
+            self.stop()
 
 
     def _connect(self):
+        """
+        Opens websocket connection.
+
+        This function will also wait till the opening process has been finished
+        """
         self.connector.open()
-        self.connector.connected.wait()
 
     
     def _disconnect(self):
-        self.connector.stop()
+        """
+        Closes the connection.
+
+        Closing the connection also stops the websocket thread. So this 
+        function allows the Pyghthouse thread to exit properly.
+        """
+        self.connector.close()

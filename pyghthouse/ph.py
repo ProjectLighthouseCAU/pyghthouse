@@ -133,54 +133,66 @@ class Pyghthouse:
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
                  ignore_ssl_cert=False):
         
-        if frame_rate > 60.0 or frame_rate <= 0:
-            raise ValueError("frame rate must be greater than 0 and at most 60.")
+        # Lower bound must be higher than default timeout of websocket
+        if frame_rate > 60.0 or frame_rate <= 0.5:
+            raise ValueError("Frame rate must be greater than 0.5 and at most 60.")
         
-        send_interval = 1.0 / frame_rate
+        self.send_interval = 1.0 / frame_rate
+        self.timeout = 3
+        
         self.canvas = PyghthouseCanvas()
-        self.ph_thread = PHThread(send_interval, image_callback, self.canvas,
-                                  username, token, address, verbosity, ignore_ssl_cert)
+        self.ph_thread = PHThread(self.send_interval, image_callback, self.canvas,
+                                  username, token, address, verbosity, ignore_ssl_cert, self.timeout)
         
-        self.ready = self.ph_thread.ready
         signal(SIGINT, self._handle_sigint)
 
 
     def start(self):
 
-        if self.ready.is_set() == True:
+        if not self.ph_thread.ready.is_set():
+            self.ph_thread.start()
             
-            # TODO: Raise exception and stop or give a warning?
-            self.close()
-            raise RuntimeError("Pyghthouse can only be started once")
+            if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.5):
+                raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
         
         else:
-            
-            self.ph_thread.start()
-            self.ready.wait()
+
+            self.close()
+            raise RuntimeError("Pyghthouse can only be started once.")
 
 
     def set_image(self, image):
         
-        if not self.ready.is_set():
-            raise RuntimeError("cannot set an image before Pyghthouse started")
+        # Check for errors
+        if self.ph_thread.error.is_set():
+            raise self.ph_thread.exception
         
+        if self.ph_thread.connector.error.is_set():
+            raise self.ph_thread.connector.exception
+        
+        # Check if Pyghthouse is running
+        if not self.ph_thread.ready.is_set():
+            raise RuntimeError("Cannot set an image before Pyghthouse has started.")
+        
+        # Setting the image
         try:
             self.canvas.set_image(image)
-        
         except:
             self.close()
             raise
 
 
-    def close(self):
-        
-        if self.ready.is_set():
-            
+    def stop(self):
+        """
+        Stops Pyghthouse.
+
+        Stops the Pyghthouse routine and closes the websocket connection. All
+        threads used by Pyghthouse will be stopped in the process.
+
+        When Pyghthouse isn't running, no changes will be made. 
+        """
+        if self.ph_thread.ready.is_set():
             self.ph_thread.stop()
-            self.ph_thread.join()
-        
-        else:
-            raise RuntimeError("cannot stop Pyghthouse before it started")
 
 
     @staticmethod
@@ -197,24 +209,30 @@ class Pyghthouse:
         return self.canvas.copy_image()
 
 
+    # Deprecated
     def get_image_raw(self):
         return self.get_image()
 
+    # Deprecated
     @staticmethod
     def empty_image_raw():
         return Pyghthouse.empty_image()
     
+    # Deprecated
     def set_image_callback(self, image_callback):
         self.ph_thread.callback = image_callback
 
+    # Deprecated
     def set_frame_rate(self, frame_rate):
         if frame_rate > 60.0 or frame_rate <= 0:
             self.close()
             raise ValueError("frame rate must be greater than 0 and at most 60.")
         self.ph_thread.send_interval = 1.0 / frame_rate
 
+    # Deprecated
     def connect(self):
         return self.start()
-    
-    def stop(self):
-        return self.close()
+
+    # Deprecated
+    def close(self):
+        return self.stop()

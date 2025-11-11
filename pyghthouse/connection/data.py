@@ -1,6 +1,6 @@
 from enum import Enum
 
-class REID:
+class ReID:
     def __init__(self):
         self._next = 0
 
