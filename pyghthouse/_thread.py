@@ -2,7 +2,7 @@ from threading import Thread, Event, main_thread
 from time import sleep, time
 
 from .data.canvas import PyghthouseCanvas
-from .connection.wsconnector_new import WSConnector, VerbosityLevel
+from .connection.wsconnector import WSConnector, VerbosityLevel
 
 class PHThread(Thread):
     """
