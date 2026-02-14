@@ -1,4 +1,5 @@
 from signal import signal, SIGINT
+from time import sleep
 
 from .data.canvas import PyghthouseCanvas
 from ._thread import PHThread
@@ -133,14 +134,32 @@ class Pyghthouse:
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
                  ignore_ssl_cert=False):
         
-        # Lower bound must be higher than default timeout of websocket
+        self.canvas = PyghthouseCanvas()
+
+        """
+        The timeout of the lamp controllers is 5 seconds, so to prevent unexpected behaviour of the light
+        installation, our libraries timeout needs to be faster than the timeout of our lamp controller.
+        To be more precise, we need to be faster than:
+        (socket) timeout + send_interval + network delay < 5
+        
+        The socket timeout consists of the full send process from the libraries websocket thread to our model server
+        beacon. So for the network delay, we only need to consider the streaming of the model inside the Lighthouse 
+        infrastructure. 
+        We can approximate this delay to a range from 0.1 to 0.5 seconds,
+        depending on the servers load.
+
+        With a frame rate of 0.5, we get a send_interval of 2 seconds.
+
+        So we get a total worst-case of:
+        (socket) timeout + send_interval + network delay = total delay
+                2.5      +      2.0      +      ~0.5     ~    5.0
+        """
         if frame_rate > 60.0 or frame_rate <= 0.5:
             raise ValueError("Frame rate must be greater than 0.5 and at most 60.")
         
         self.send_interval = 1.0 / frame_rate
-        self.timeout = 3
+        self.timeout = 2.5
         
-        self.canvas = PyghthouseCanvas()
         self.ph_thread = PHThread(self.send_interval, image_callback, self.canvas,
                                   username, token, address, verbosity, ignore_ssl_cert, self.timeout)
         
@@ -148,11 +167,13 @@ class Pyghthouse:
 
 
     def start(self):
-
-        if not self.ph_thread.ready.is_set():
+        """
+        Starts Pyghthouse routine.
+        """
+        if not self.ph_thread.connected.is_set():
             self.ph_thread.start()
             
-            if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.5):
+            if not self.ph_thread.connected.wait(self.timeout + 0.3):
                 raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
         
         else:
@@ -162,16 +183,15 @@ class Pyghthouse:
 
 
     def set_image(self, image):
-        
-        # Check for errors
-        if self.ph_thread.error.is_set():
-            raise self.ph_thread.exception
-        
-        if self.ph_thread.connector.error.is_set():
-            raise self.ph_thread.connector.exception
-        
-        # Check if Pyghthouse is running
-        if not self.ph_thread.ready.is_set():
+        """
+        Sets pyghthouse canvas to a new image.
+
+        :param image: A 3D array where every entry is accessed via image[y][x][rgb].
+                      The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
+                      RGB entries only allow values in a range of 0 to 255 (one byte).
+        """
+        # Check if Pyghthouse routine is running
+        if not self._routine_is_running():
             raise RuntimeError("Cannot set an image before Pyghthouse has started.")
         
         # Setting the image
@@ -182,21 +202,48 @@ class Pyghthouse:
             raise
 
 
+    def wait(self):
+        """
+        Wait for finalization of the current frame.
+
+        Recommended to prevent skipping of frames. 
+        **Do not use for fast interactive animations**, like a game, because
+        waiting can result into delayed or ignored inputs!
+        
+        **set_image** sets the image as fast as possible. On the other hand,
+        the pyghthouse routine creates a frame with the last image set.
+        This will result into losing images, when we create our images faster than the frame rate.
+        To prevent the loss of an image, we can use **wait** to wait until the current frame has been build.
+        """
+        self._routine_is_running()
+        
+        if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
+            raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
+        
+        self.ph_thread.ready.clear()
+
+
     def stop(self):
         """
         Stops Pyghthouse.
 
         Stops the Pyghthouse routine and closes the websocket connection. All
         threads used by Pyghthouse will be stopped in the process.
+        This process can take more time with lower frame rate.
 
-        When Pyghthouse isn't running, no changes will be made. 
+        When Pyghthouse isn't running, no changes will be made.
         """
-        if self.ph_thread.ready.is_set():
+        if self.ph_thread.connected.is_set("Unexpected library behaviour. Reached wait timeout before socket timeout."):
             self.ph_thread.stop()
 
 
     @staticmethod
     def empty_image():
+        """
+        Returns an empty image.
+
+        An empty image is a fully black image, meaning every RGB value is set to 0. 
+        """
         return [[[0 for k in range(3)] for j in range(28)] for i in range(14)]
 
 
@@ -204,6 +251,18 @@ class Pyghthouse:
         self.close()
         raise SystemExit(0)
 
+
+    def _routine_is_running(self):
+        # Check for errors
+        if self.ph_thread.error.is_set():
+            raise self.ph_thread.exception
+        
+        if self.ph_thread.connector.error.is_set():
+            raise self.ph_thread.connector.exception
+        
+        # Check if Pyghthouse routine is running
+        return self.ph_thread.connected.is_set()
+   
 
     def get_image(self):
         return self.canvas.copy_image()

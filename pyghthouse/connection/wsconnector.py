@@ -28,7 +28,7 @@ class WSConnector:
     
     def __init__(self, username:str, token:str, address:str, 
                  verbosity=VerbosityLevel.WARN_ONCE, ignore_ssl_cert:bool=False, 
-                 handler=PHMessageHandler, timeout=3):
+                 handler=PHMessageHandler, timeout=2.5):
         """
         WSConnector initialization.
 
@@ -104,7 +104,7 @@ class WSConnector:
         
         self.thread.start()
         
-        if not self.connected.wait(self.timeout+0.5):
+        if not self.connected.wait(self.timeout + 0.2):
             raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
         
         if self.error.is_set():
