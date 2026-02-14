@@ -269,15 +269,6 @@ class Pyghthouse:
         """
         return self.canvas.copy_image()
 
-
-    # Deprecated
-    def get_image_raw(self):
-        return self.get_image()
-
-    # Deprecated
-    @staticmethod
-    def empty_image_raw():
-        return Pyghthouse.empty_image()
     
     # Deprecated
     def set_image_callback(self, image_callback):
@@ -289,11 +280,3 @@ class Pyghthouse:
             self.close()
             raise ValueError("frame rate must be greater than 0 and at most 60.")
         self.ph_thread.send_interval = 1.0 / frame_rate
-
-    # Deprecated
-    def connect(self):
-        return self.start()
-
-    # Deprecated
-    def close(self):
-        return self.stop()
