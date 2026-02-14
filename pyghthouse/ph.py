@@ -190,7 +190,6 @@ class Pyghthouse:
                       The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
                       RGB entries only allow values in a range of 0 to 255 (one byte).
         """
-        # Check if Pyghthouse routine is running
         if not self._routine_is_running():
             raise RuntimeError("Cannot set an image before Pyghthouse has started.")
         
@@ -215,7 +214,8 @@ class Pyghthouse:
         This will result into losing images, when we create our images faster than the frame rate.
         To prevent the loss of an image, we can use **wait** to wait until the current frame has been build.
         """
-        self._routine_is_running()
+        if not self._routine_is_running():
+            raise RuntimeError("Cannot wait without a Pyghthouse routine running.")
         
         if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
             raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
@@ -227,13 +227,12 @@ class Pyghthouse:
         """
         Stops Pyghthouse.
 
-        Stops the Pyghthouse routine and closes the websocket connection. All
-        threads used by Pyghthouse will be stopped in the process.
-        This process can take more time with lower frame rate.
+        Stops the Pyghthouse routine and closes the websocket connection. All threads used by Pyghthouse will be
+        stopped in the process. This process can take more time with lower frame rate.
 
         When Pyghthouse isn't running, no changes will be made.
         """
-        if self.ph_thread.connected.is_set("Unexpected library behaviour. Reached wait timeout before socket timeout."):
+        if self.ph_thread.connected.is_set():
             self.ph_thread.stop()
 
 
@@ -265,6 +264,9 @@ class Pyghthouse:
    
 
     def get_image(self):
+        """
+        Returns an image copy of the current canvas image.
+        """
         return self.canvas.copy_image()
 
 
