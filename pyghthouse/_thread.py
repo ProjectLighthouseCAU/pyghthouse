@@ -120,8 +120,7 @@ class PHThread(Thread):
             print("Starting Pyghthouse routine.")
         
         self._connect()
-        self.ready.set()
-        
+
         while not self._is_stop():
 
             self._send_image()
@@ -145,6 +144,7 @@ class PHThread(Thread):
             self._get_callback_image()
 
         bytes_image = self.canvas.get_bytes_image()
+        # Signal wait function in ph.py to continue
         self.ready.set()
         self.connector.send(bytes_image)
 

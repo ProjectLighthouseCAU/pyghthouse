@@ -105,7 +105,7 @@ class WSConnector:
         self.thread.start()
         
         if not self.connected.wait(self.timeout + 0.2):
-            raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
+            raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
         
         if self.error.is_set():
             self.connected.clear()

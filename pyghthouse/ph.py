@@ -174,7 +174,7 @@ class Pyghthouse:
             self.ph_thread.start()
             
             if not self.ph_thread.connected.wait(self.timeout + 0.3):
-                raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
+                raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
         
         else:
 
@@ -185,6 +185,8 @@ class Pyghthouse:
     def set_image(self, image):
         """
         Sets pyghthouse canvas to a new image.
+
+        This function sets the image as fast as possible. To prevent a loss of an image, use **wait** between each **set_image** call.
 
         :param image: A 3D array where every entry is accessed via image[y][x][rgb].
                       The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
@@ -205,6 +207,8 @@ class Pyghthouse:
         """
         Wait for finalization of the current frame.
 
+        This function blocks the called thread until the current frame has been constructed.
+
         Recommended to prevent skipping of frames. 
         **Do not use for fast interactive animations**, like a game, because
         waiting can result into delayed or ignored inputs!
@@ -217,12 +221,11 @@ class Pyghthouse:
         if not self._routine_is_running():
             raise RuntimeError("Cannot wait without a Pyghthouse routine running.")
         
-        if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
-            raise RuntimeError("Unexpected library behaviour. Reached wait timeout before socket timeout.")
-        
         self.ph_thread.ready.clear()
 
-
+        if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
+            raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
+        
     def stop(self):
         """
         Stops Pyghthouse.
@@ -270,13 +273,27 @@ class Pyghthouse:
         return self.canvas.copy_image()
 
     
-    # Deprecated
     def set_image_callback(self, image_callback):
+        """
+        Sets a new callback function for image creation.
+
+        This function is async to the pyghthouse routine, so non-deterministic behaviour is possible.
+
+        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait** for x
+        times where x is the amount of images send before calling this function.
+        """
         self.ph_thread.callback = image_callback
+
+
+    # Deprecated
+    def close(self):
+        print("Warning: close is a deprecated feature. It is recommended to use stop instead.")
+        self.stop()
 
     # Deprecated
     def set_frame_rate(self, frame_rate):
-        if frame_rate > 60.0 or frame_rate <= 0:
+        print("Warning: set_frame_rate is a deprecated feature and can cause enexpected behaviour.")
+        if frame_rate > 60.0 or frame_rate <= 0.5:
             self.close()
-            raise ValueError("frame rate must be greater than 0 and at most 60.")
+            raise ValueError("frame rate must be greater than 0.5 and at most 60.")
         self.ph_thread.send_interval = 1.0 / frame_rate
