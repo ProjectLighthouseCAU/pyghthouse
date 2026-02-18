@@ -62,7 +62,6 @@ class WSConnector:
         self.error = Event()
         self.exception = None
         
-        # TODO: Add closing function to the message handler, for cases like 401 unauthorized
         kwargs = {"verbosity": self.verbosity}
         handler = handler(kwargs)
         self.handle_message = handler.handle

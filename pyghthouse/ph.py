@@ -176,7 +176,7 @@ class Pyghthouse:
         
         else:
 
-            self.close()
+            self.stop()
             raise RuntimeError("Pyghthouse can only be started once.")
 
 
@@ -197,7 +197,7 @@ class Pyghthouse:
         try:
             self.canvas.set_image(image)
         except:
-            self.close()
+            self.stop()
             raise
 
 
@@ -282,13 +282,13 @@ class Pyghthouse:
 
     # Deprecated
     def close(self):
-        print("Warning: close is a deprecated feature. It is recommended to use stop instead.")
+        print("Warning: close is a deprecated feature. Use stop instead.")
         self.stop()
 
     # Deprecated
     def set_frame_rate(self, frame_rate):
         print("Warning: set_frame_rate is a deprecated feature and can cause enexpected behaviour.")
         if frame_rate > 60.0 or frame_rate <= 0.5:
-            self.close()
+            self.stop()
             raise ValueError("frame rate must be greater than 0.5 and at most 60.")
         self.ph_thread.send_interval = 1.0 / frame_rate

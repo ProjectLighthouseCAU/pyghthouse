@@ -14,16 +14,22 @@ class PHMessageHandler:
         # TODO: Decide to print error to console and keep going or to close connection and stop pyghthouse routine
         if self.verbosity == VerbosityLevel.ALL:
             print(msg)
-        
-        elif not msg['RNUM'] == 200:
-            
-            if self.verbosity == VerbosityLevel.WARN:
-                self.print_warning(msg)
-            
-            elif self.verbosity == VerbosityLevel.WARN_ONCE and not self.warned_already:
-                self.print_warning(msg)
-                self.warned_already = True
+            return
 
-    @staticmethod
-    def print_warning(msg):
+        match msg["RNUM"]:
+            case 200:
+                pass
+            case 401:
+                self.print_warning(msg, "Are Username and Token correct?")
+            case _:
+                self.print_warning(msg)
+        
+    def print_warning(self, msg, hint=""):
+        if self.verbosity == VerbosityLevel.WARN_ONCE and self.warned_already:
+            return
+        
         print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
+        if hint:
+            print(hint)
+        
+        self.warned_already = True
