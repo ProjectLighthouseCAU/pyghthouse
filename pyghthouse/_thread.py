@@ -182,4 +182,5 @@ class PHThread(Thread):
         function allows the Pyghthouse thread to exit properly.
         """
         self.connected.clear()
+        self.ready.set()
         self.connector.close()

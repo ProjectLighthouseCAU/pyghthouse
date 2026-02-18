@@ -66,7 +66,6 @@ class WSConnector:
         handler = handler(kwargs)
         self.handle_message = handler.handle
         
-        # TODO: Maybe move functions for state handeling to handler class?
         self.ws = WebSocketApp(address, 
                                on_open=self._on_open, 
                                on_message=self._on_message, 
