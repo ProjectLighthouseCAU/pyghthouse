@@ -162,8 +162,6 @@ class Pyghthouse:
         
         self.ph_thread = PHThread(self.send_interval, image_callback, self.canvas,
                                   username, token, address, verbosity, ignore_ssl_cert, self.timeout)
-        
-        signal(SIGINT, self._handle_sigint)
 
 
     def start(self):
@@ -268,11 +266,6 @@ class Pyghthouse:
         When the image_callback is set to *None*
         """
         self.ph_thread.callback = image_callback
-
-
-    def _handle_sigint(self, sig, frame):
-        self.close()
-        raise SystemExit(0)
 
 
     def _routine_is_running(self):
