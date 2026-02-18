@@ -184,7 +184,8 @@ class Pyghthouse:
         """
         Sets pyghthouse canvas to a new image.
 
-        This function sets the image as fast as possible. To prevent a loss of an image, use **wait** between each **set_image** call.
+        This function overwrites the old image. Only the newest image will be converted to a frame by the pyghthouse
+        routine. To prevent the loss of an image, use **wait** after a **set_image** call.
 
         :param image: A 3D array where every entry is accessed via image[y][x][rgb].
                       The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
