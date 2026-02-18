@@ -153,9 +153,8 @@ class PHThread(Thread):
         """
         Get image from callback function.
         """
-        image_from_callback = self.callback()
-        
         try:
+            image_from_callback = self.callback()
             self.canvas.set_image(image_from_callback)
         
         except Exception as exception:

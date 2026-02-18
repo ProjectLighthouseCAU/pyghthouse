@@ -65,8 +65,8 @@ class Pyghthouse:
     Each color channel has a depth of 8 bits, i.e. is represented by a number between 0 and 255, inclusively. For
     instance, [255, 127, 0] is 100% red, 50% green and 0% blue, a.k.a. orange.
 
-    Images can be either flat or nested lists, as long as they have 14*28*3=1176 elements overall. The
-    Pyghthouse.empty_image() method returns a completely black image in the nested format, i.e.
+    Images are nested lists with 14*28*3=1176 elements overall. The Pyghthouse.empty_image() method returns a 
+    completely black image in the nested format, i.e.
     [
       [
         [0, 0, 0,],
@@ -84,7 +84,7 @@ class Pyghthouse:
     The following example creates a Pyghthouse and sets the 10th window of the 11th floor to orange.
     >>> from pyghthouse import Pyghthouse
     >>> p = Pyghthouse("YourUsername", "YourToken")
-    >>> p.start() # not necessary to set image, but necessary for sending.
+    >>> p.start() # necessary to set image and for sending.
     >>> img = Pyghthouse.empty_image()
     >>> img[3][9] = [255, 127, 0]
     >>> p.set_image(img)
@@ -228,7 +228,7 @@ class Pyghthouse:
         
     def stop(self):
         """
-        Stops Pyghthouse.
+        Stops Pyghthouse routine.
 
         Stops the Pyghthouse routine and closes the websocket connection. All threads used by Pyghthouse will be
         stopped in the process. This process can take more time with lower frame rate.
@@ -249,6 +249,27 @@ class Pyghthouse:
         return [[[0 for k in range(3)] for j in range(28)] for i in range(14)]
 
 
+    def get_image(self):
+        """
+        Returns an image copy of the current canvas image.
+        """
+        return self.canvas.copy_image()
+
+    
+    def set_image_callback(self, image_callback=None):
+        """
+        Sets a new callback function for image creation.
+
+        This function is async to the pyghthouse routine, so non-deterministic behaviour is possible.
+
+        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait** for x
+        times where x is the amount of images send before calling this function.
+
+        When the image_callback is set to *None*
+        """
+        self.ph_thread.callback = image_callback
+
+
     def _handle_sigint(self, sig, frame):
         self.close()
         raise SystemExit(0)
@@ -264,25 +285,6 @@ class Pyghthouse:
         
         # Check if Pyghthouse routine is running
         return self.ph_thread.connected.is_set()
-   
-
-    def get_image(self):
-        """
-        Returns an image copy of the current canvas image.
-        """
-        return self.canvas.copy_image()
-
-    
-    def set_image_callback(self, image_callback):
-        """
-        Sets a new callback function for image creation.
-
-        This function is async to the pyghthouse routine, so non-deterministic behaviour is possible.
-
-        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait** for x
-        times where x is the amount of images send before calling this function.
-        """
-        self.ph_thread.callback = image_callback
 
 
     # Deprecated
