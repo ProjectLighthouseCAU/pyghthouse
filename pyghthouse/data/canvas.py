@@ -1,4 +1,5 @@
 from threading import Lock
+from numbers import Number
 
 class PyghthouseCanvas:
     
@@ -70,20 +71,18 @@ class PyghthouseCanvas:
         
         # Raise ValueError on wrong dimension size
         if self.IMAGE_SHAPE != other_size:
-            raise ValueError(f"The image does not have the correct dimensions. Dimensions should be {self.IMAGE_SHAPE} as (y, x, rgb), but received {other_size}")
+            raise ValueError(f"The image does not have the correct dimension sizes. Dimensions should be {self.IMAGE_SHAPE} as (row, column, rgb), but received {other_size}")
             
         
     
     def _check_cells(self, other: list):
         
         # Catch objects like [[[0,1,2],[0,1,2,3,4,5],[1]],1]
-        # TODO: Decide on either throw error on too large lists or do a warning
-        # TODO: Decide on either try-except block or TypeCheck
         for y in range(self.IMAGE_SHAPE[0]):
             try:
                 
                 if len(other[y]) != self.IMAGE_SHAPE[1]:
-                    raise IndexError(f"x-list size should be {self.IMAGE_SHAPE[1]} but received {len(other[y])} at position [{y}]")
+                    raise IndexError(f"column-list size should be {self.IMAGE_SHAPE[1]} but received {len(other[y])} at position [{y}]")
             
             except (TypeError):
                 raise TypeError(f"Require type 'list' at [{y}], but received object of type '{type(other[y]).__name__}'") from None
@@ -107,11 +106,8 @@ class PyghthouseCanvas:
                     
                     value = other[y][x][rgb]
                     
-                    # TODO: Decide on either throw error on wrong type or do a typecast with a warning. 
-                    #       Which types should be allowed? All numerical or only int?
-                    if not isinstance(value, int):
-                        raise TypeError(f"Wrong type at ({y},{x},{rgb}). Type should be 'int' but received '{type(value).__name__}'")
+                    if not isinstance(value, Number):
+                        raise TypeError(f"Wrong type at ({y},{x},{rgb}). Type should be a Number, like 'int', but received '{type(value).__name__}'")
                     
-                    # TODO: Decide on either throw error when out of range or change to closest value in range with a warning
                     if int(value) < 0 or int(value) > 255:
                         raise ValueError(f"Received value {value} at ({y},{x},{rgb}) is out of range. Value should be a number between 0 <= value <= 255")
