@@ -195,11 +195,7 @@ class Pyghthouse:
             raise RuntimeError("Cannot set an image before Pyghthouse has started.")
         
         # Setting the image
-        try:
-            self.canvas.set_image(image)
-        except:
-            self.stop()
-            raise
+        self.canvas.set_image(image)
 
 
     def wait(self):
