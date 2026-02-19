@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pyghthouse',
-    version='0.3.0',
+    version='0.4.0',
     packages=find_packages(where='.'),
     url='https://github.com/ProjectLighthouseCAU/pyghthouse',
     license='MIT',
