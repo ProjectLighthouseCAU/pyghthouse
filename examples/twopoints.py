@@ -62,6 +62,4 @@ if __name__ == '__main__':
     i = ImageMaker()
     p = Pyghthouse(UNAME, TOKEN, image_callback=i.callback, frame_rate=60)
     p.start()
-
-    while True:
-        p.wait()
+    p.keep_running()

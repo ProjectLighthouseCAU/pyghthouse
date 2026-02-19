@@ -22,6 +22,4 @@ if __name__ == '__main__':
     p = Pyghthouse(UNAME, TOKEN, image_callback=g.__next__, frame_rate=60)
     print("Starting... use CTRL+C to stop.")
     p.start()
-
-    while True:
-        p.wait()
+    p.keep_running()

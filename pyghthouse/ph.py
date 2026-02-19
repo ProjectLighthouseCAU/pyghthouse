@@ -224,7 +224,20 @@ class Pyghthouse:
 
         if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
             raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
-        
+
+
+    def keep_running(self):
+        """
+        Keeps the main thread alive.
+
+        This function blocks the main thread. This will keep the pyghthouse routine running.
+
+        Recommended for the use of callback functions which should run until error or keyboard interrupt.
+        """
+        while self._routine_is_running():
+            self.wait()
+
+
     def stop(self):
         """
         Stops Pyghthouse routine.
