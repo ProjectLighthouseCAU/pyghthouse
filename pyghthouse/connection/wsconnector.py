@@ -13,15 +13,13 @@ class WSConnector:
     Attributes
     ----------
     connected : Event
-        Event flag is set to *True* when websocket thread is connected to the
-        webserver and **send** can be used.
+        Event flag is set to *True* when websocket thread is connected to the webserver and **send** can be used.
     
     error : Event
         Event flag is set to *True* when error accured and connection is closed.
         
-    The flag **error** has a higher priotiy than the **connected** flag.
-    Meaning when **error** is set to *True*, the connection is closed
-    even when **connected** can be set to *True*.
+    The flag **error** has a higher priotiy than the **connected** flag. Meaning when **error** is set to *True*, the
+    connection is closed even when **connected** can be set to *True*.
 
     For further invastigation, check developer notes in **on_error**
     """
@@ -43,9 +41,8 @@ class WSConnector:
         verbosity: VerbosityLevel
             Indicate level of displayed informations.
         ignore_ssl_cert: bool
-            Ignores ssl certification when set to *True*. Default ssl
-            certification is none, so no certificates from the other side are
-            required (or will be looked at if provided).
+            Ignores ssl certification when set to *True*. Default ssl certification is none, so no certificates from
+            the other side are required (or will be looked at if provided).
         handler: PHMessageHandler
             Handles the messages received from the network.
         timeout: int or float
@@ -90,13 +87,11 @@ class WSConnector:
 
         Starts websocket thread which will open the websocket connection.
         
-        After opening the websocket, the websocket thread sets the 
-        **connected** event flag to *True* and is ready to send data.
+        After opening the websocket, the websocket thread sets the **connected** event flag to *True* and is ready to
+        send data.
 
-        When an error accured upon opening, the **error** flag will be set to
-        *True* and **on_error** will be called. In this case, the connection
-        will be closed again and the **connected** flag will cleared to *False*
-        again.
+        When an error accured upon opening, the **error** flag will be set to *True* and **on_error()** will be called.
+        In this case, the connection will be closed again and the **connected** flag will cleared to *False* again.
         """
         if self.verbosity == VerbosityLevel.ALL:
             print("Opening websocket connection.")
@@ -118,8 +113,7 @@ class WSConnector:
         """
         Send data via websocket connection.
 
-        Raises a *WebSocketConnectionClosedException* when no connection is
-        present.
+        Raises a *WebSocketConnectionClosedException* when no connection is present.
         """
         if self.error.is_set():
             return
@@ -203,14 +197,12 @@ class WSConnector:
         ----------------
         Developer notes:
 
-        When the websocket thread has been started, **on_close** will always be
-        called, even when an error accured upon opening the connection. This is
-        a result of the **teardown** function in WebSocketApp.
+        When the websocket thread has been started, **on_close** will always be called, even when an error accured upon
+        opening the connection. This is a result of the **teardown()** function in WebSocketApp.
 
-        So its possible that **on_close** will be called even when **on_open**
-        hasn't been called yet.
+        So its possible that **on_close()** will be called even when **on_open()** hasn't been called yet.
         
-        For further invastigation, check the developer notes in **on_error**.
+        For further invastigation, check the developer notes in **on_error()**.
         """
         if self.verbosity == VerbosityLevel.ALL:
             print("Connection closed.")
@@ -222,36 +214,30 @@ class WSConnector:
         """
         Further handeling of errors outside of WebSocketApp.
 
-        This function will save the **exception** and set the flag **error**
-        to *True*.
+        This function will save the **exception** and set the flag **error** to *True*.
 
-        This function also sets the flag **connected** to *True* to avoid
-        blocking of **open** when an error accured upon opening the connection.
+        This function also sets the flag **connected** to *True* to avoid blocking of **open** when an error accured
+        upon opening the connection.
         
         ----------------
         Developer notes:
 
-        This method is used by WebSocketApp as callback function.
-        The intend is to signal that an error accured in WebSocketApp and to
-        allow further error handeling outside of WebSocketApp.
+        This method is used by WebSocketApp as callback function. The intend is to signal that an error accured in
+        WebSocketApp and to allow further error handeling outside of WebSocketApp.
 
-        Because we use **run_forever** without a parameter for **reconnect**, 
-        we use the standard of *0* from the websocket-client library.
-        This will always force a teardown of the connection without an attempt
-        to reconnect upon error. 
+        Because we use **run_forever()** without a parameter for **reconnect()**, we use the standard of *0* from the
+        websocket-client library. This will always force a teardown of the connection without an attempt to reconnect
+        upon error. 
         
-        A teardown of the connection will also call the **_on_close** callback
-        function, even when **_on_error** has been the called. **_on_close**
-        will even be called when an error accured on the attempt to open the 
+        A teardown of the connection will also call the **_on_close()** callback function, even when **_on_error()**
+        has been the called. **_on_close()** will even be called when an error accured on the attempt to open the 
         websocket.
-        Meaning, **_on_close** can be called even when **_on_open** hasn't been
-        called yet.
+        Meaning, **_on_close()** can be called even when **_on_open()** hasn't been called yet.
 
-        Do not raise the exception here!
+        Do not raise an exception here!
         --------------------------------
-        This function will be called from the websocket thread. Raising an 
-        exception here stops the teardown process and could result into 
-        unexpected behaviour.
+        This function will be called from the websocket thread. Raising an exception here stops the teardown process
+        and could result into unexpected behaviour.
         """
         
         if self.verbosity == VerbosityLevel.ALL:

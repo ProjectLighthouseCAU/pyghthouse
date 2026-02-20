@@ -185,7 +185,7 @@ class Pyghthouse:
         Sets pyghthouse canvas to a new image.
 
         This function overwrites the old image. Only the newest image will be converted to a frame by the pyghthouse
-        routine. To prevent the loss of an image, use **wait** after a **set_image** call.
+        routine. To prevent the loss of an image, use **wait()** after **set_image()** call.
 
         :param image: A 3D array where every entry is accessed via image[y][x][rgb].
                       The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
@@ -194,7 +194,6 @@ class Pyghthouse:
         if not self._routine_is_running():
             raise RuntimeError("Cannot set an image before Pyghthouse has started.")
         
-        # Setting the image
         self.canvas.set_image(image)
 
 
@@ -208,10 +207,10 @@ class Pyghthouse:
         **Do not use for fast interactive animations**, like a game, because
         waiting can result into delayed or ignored inputs!
         
-        **set_image** sets the image as fast as possible. On the other hand,
+        **set_image()** sets the image as fast as possible. On the other hand,
         the pyghthouse routine creates a frame with the last image set.
         This will result into losing images, when we create our images faster than the frame rate.
-        To prevent the loss of an image, we can use **wait** to wait until the current frame has been build.
+        To prevent the loss of an image, we can use **wait()** to wait until the current frame has been build.
         """
         if not self._routine_is_running():
             raise RuntimeError("Cannot wait without a Pyghthouse routine running.")
@@ -270,10 +269,11 @@ class Pyghthouse:
 
         This function is async to the pyghthouse routine, so non-deterministic behaviour is possible.
 
-        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait** for x
+        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait()** for x
         times where x is the amount of images send before calling this function.
 
-        When the image_callback is set to *None*
+        When the image_callback is set to *None*, the Pyghthouse routine will stop using the callback function for 
+        image generation. 
         """
         self.ph_thread.callback = image_callback
 
@@ -292,7 +292,16 @@ class Pyghthouse:
 
     # Deprecated
     def close(self):
-        print("Warning: close is a deprecated feature. Use stop instead.")
+        """
+        Same as **stop()**. 
+        
+        Stops Pyghthouse routine.
+
+        Stops the Pyghthouse routine and closes the websocket connection. All threads used by Pyghthouse will be
+        stopped in the process. This process can take more time with lower frame rate.
+
+        When Pyghthouse isn't running, no changes will be made.
+        """
         self.stop()
 
     # Deprecated

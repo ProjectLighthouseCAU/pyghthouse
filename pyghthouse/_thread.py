@@ -114,7 +114,7 @@ class PHThread(Thread):
 
     def run(self):
         """
-        Starts Pyghthouse-Thread routine. This routine sends images in the selected interval.
+        Starts Pyghthouse-Thread routine. This routine build and sends frames in the selected interval.
         """
         if self.verbosity == VerbosityLevel.ALL:
             print("Starting Pyghthouse routine.")
@@ -138,20 +138,21 @@ class PHThread(Thread):
         """
         Build and send current frame.
 
-        If error accures in sending process, the connection will be closed.
+        If error accures process, the connection will be closed.
         """
         if self.callback is not None:
-            self._get_callback_image()
-
+            self._set_callback_image()
         bytes_image = self.canvas.get_bytes_image()
+        
         # Signal wait function in ph.py to continue
         self.ready.set()
+        
         self.connector.send(bytes_image)
 
 
-    def _get_callback_image(self):
+    def _set_callback_image(self):
         """
-        Get image from callback function.
+        Set image from callback function.
         """
         try:
             image_from_callback = self.callback()
@@ -168,7 +169,7 @@ class PHThread(Thread):
         """
         Opens websocket connection.
 
-        This function will also wait till the opening process has been finished
+        This function will also wait until the opening process has been finished
         """
         self.connector.open()
         self.connected.set()
@@ -178,8 +179,8 @@ class PHThread(Thread):
         """
         Closes the connection.
 
-        Closing the connection also stops the websocket thread. So this 
-        function allows the Pyghthouse thread to exit properly.
+        Closing the connection also stops the websocket thread. So this function allows the Pyghthouse thread to exit
+        properly.
         """
         self.connected.clear()
         self.ready.set()

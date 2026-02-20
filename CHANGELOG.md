@@ -8,6 +8,7 @@
 * **Error handeling:** `PyghthouseCanvas.set_image` will now throw more useful errors upon invalid image object
 
 ### Changes
+* **start ... stop:** `Pyghthouse.stop` now does the same as `Pyghthouse.close`. For consistency, we recommend to use the start ... stop pattern for the Pyghthouse routine.
 * **main thread check:** The pyghthouse routine will now stop when the main thread has died. To keep the pyghthouse routine running, use `Pyghthouse.keep_running`
 * **Wait for start:** `Pyghthouse.start` will now wait until the start sequence is completed
 
