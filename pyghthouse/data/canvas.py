@@ -15,11 +15,19 @@ class PyghthouseCanvas:
 
 
     def set_image(self, new_image: list) -> True:
-        
+        """
+        Set the canvas to the **new_image**.
+
+        Throws exeptions when an invalid image object has been given.
+
+        This function is thread-safe.
+        """
+        # Catch invalid image objects
         self._check_size(new_image)
         self._check_cells(new_image)
         self._check_values(new_image)
 
+        # Setting the image
         with self.lock:
 
             for y in range(self.IMAGE_SHAPE[0]):
@@ -32,7 +40,11 @@ class PyghthouseCanvas:
     
 
     def get_bytes_image(self):
-        
+        """
+        Returns the currently saved image in a bytearray.
+
+        This function is thread-safe.
+        """
         image_bytes = b''
         
         with self.lock:
@@ -46,7 +58,11 @@ class PyghthouseCanvas:
     
 
     def copy_image(self):
+        """
+        Returns a copy of the currently saved image.
 
+        This function is thread-safe.
+        """
         image_copy = [[[0 for k in range(self.IMAGE_SHAPE[2])] for j in range(self.IMAGE_SHAPE[1])] for i in range(self.IMAGE_SHAPE[0])]
 
         with self.lock:
@@ -60,8 +76,12 @@ class PyghthouseCanvas:
         return image_copy
 
 
-    def _check_size(self, other: list):
+    ## Internal error checking functions ##
 
+    def _check_size(self, other: list):
+        """
+        Check if we received a 3-dimensional list with the correct sizes.
+        """
         try:
             other_size = (len(other), len(other[0]), len(other[0][0]))
         
@@ -76,8 +96,12 @@ class PyghthouseCanvas:
         
     
     def _check_cells(self, other: list):
-        
-        # Catch objects like [[[0,1,2],[0,1,2,3,4,5],[1]],1]
+        """
+        Check for the existence of all expected cells in our image object. Also catches if we have too many cells.
+
+        We need this additional check because `_check_size()` only ensures that we received a 3-dimensional list.
+        """
+        # Catch objects like [[[0,1,2],[0,1,2,3,4,5],[1]],1,...]
         for y in range(self.IMAGE_SHAPE[0]):
             try:
                 
@@ -99,7 +123,9 @@ class PyghthouseCanvas:
 
 
     def _check_values(self, other: list):
-        
+        """
+        Check if all cells have valid numbers.
+        """
         for y in range(self.IMAGE_SHAPE[0]):
             for x in range(self.IMAGE_SHAPE[1]):
                 for rgb in range(self.IMAGE_SHAPE[2]):

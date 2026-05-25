@@ -13,9 +13,8 @@ class PHThread(Thread):
         - Main routine:     Loop for sending frames to the webserver.
         - Ending Phase:     Closes the connection and cleanup threads.
 
-        In the main routine, this thread will build and send frames from 
-        **canvas**. The time between each frame is indicated by 
-        **send_interval**.
+        In the main routine, this thread will build and send frames from **canvas**. The time between each frame is
+        indicated by **send_interval**.
 
         Attributes
         ----------
@@ -36,13 +35,14 @@ class PHThread(Thread):
 
         ready : Event
             Event flag is set to *True* in the send process of a frame.
-            This flag will always be *True* when connected is *True*, unless the even is unset Can be used for waiting operations.
+            This flag will always be *True* when connected is *True*, unless the event is unset.
+            Used for waiting operations (see method `Pyghthouse.wait()`).
 
         stop_event : Event
             Indicates when the Pyghthouse routine should be stopped.
 
         error : Event
-            Event flag is set to *True* when an error accured inside the pyghthouse routine.
+            Event flag is set to *True* when an error occured inside the pyghthouse routine.
         """
 
     def __init__(self, send_interval, image_callback, canvas:PyghthouseCanvas, 
@@ -138,7 +138,7 @@ class PHThread(Thread):
         """
         Build and send current frame.
 
-        If error accures process, the connection will be closed.
+        Also sets the **ready** flag after successful frame creation.
         """
         if self.callback is not None:
             self._set_callback_image()
@@ -153,6 +153,8 @@ class PHThread(Thread):
     def _set_callback_image(self):
         """
         Set image from callback function.
+
+        When an error occures, the connection will be closed and the exeption will be stored for further handeling in `ph.py`
         """
         try:
             image_from_callback = self.callback()
