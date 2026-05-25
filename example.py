@@ -1,19 +1,20 @@
 '''
-This example should give a simple overview on how to use the Pyghthouse.
+This example should give a simple overview on how to use Pyghthouse.
 
 A generel orientation of what you need:
 - Import of pyghthouse
 - Creating an instance of Pyghthouse
 - Start Pyghthouse routine
-- Sending images with either a given function or set_image
-- Stop Pyghthouse routine (not needed but recommend)
+- Sending images with either a given callback function or by set_image
+- Stop Pyghthouse routine (not needed but recommended)
 
 More examples can be found in the examples folder.
 '''
 
-# Optional: This condition only executes if run as a skript. 
+# Optional: This condition only executes if run as a script. 
 #           Importing this program won't execute this block.
 if __name__ == '__main__':
+    
     from pyghthouse import Pyghthouse
     import pyghthouse.utils as utils
     from examples.config import UNAME, TOKEN
