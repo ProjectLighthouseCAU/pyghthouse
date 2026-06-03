@@ -217,6 +217,8 @@ class Pyghthouse:
         When Pyghthouse isn't running, no changes will be made.
         """
         if self.ph_thread.connected.is_set():
+            # We don't want to lose the last image so we wait before ending.
+            self.wait() 
             self.ph_thread.stop()
 
 

@@ -105,9 +105,11 @@ class PHThread(Thread):
         
         if not self.main_thread.is_alive():
             if self.verbosity == VerbosityLevel.ALL:
-                print("Main thread dead.")
-            
-            return True
+                print("Main thread died. Sending last image.")
+
+            # We don't want to lose the last image set so we perform one more iteration.
+            # So instead of returning *True*, we set the stop_event.
+            self.stop_event.set()
        
         return False
 
