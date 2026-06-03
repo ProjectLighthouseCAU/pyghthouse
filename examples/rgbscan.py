@@ -9,11 +9,11 @@ def image_gen():
     yield image
     while True:
         for j in range(3):
-            for x in range(14):
-                for y in range(28):
-                    image[x, y, j] = 255
+            for y in range(14):
+                for x in range(28):
+                    image[y, x, j] = 255
                     yield image
-                    image[x, y, j] = 0
+                    image[y, x, j] = 0
 
 
 g = image_gen()
@@ -22,3 +22,4 @@ if __name__ == '__main__':
     p = Pyghthouse(UNAME, TOKEN, image_callback=g.__next__, frame_rate=60)
     print("Starting... use CTRL+C to stop.")
     p.start()
+    p.keep_running()

@@ -32,3 +32,4 @@ if __name__ == '__main__':
     p = Pyghthouse(UNAME, TOKEN, image_callback=callback)
     print("Starting... use CTRL+C to stop.")
     p.start()
+    p.keep_running()

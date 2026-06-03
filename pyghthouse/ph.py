@@ -1,21 +1,11 @@
-from enum import Enum
-from time import time, sleep
-from threading import Thread, Event, Lock
 from signal import signal, SIGINT
+from time import sleep
 
-import numpy as np
+from .data.canvas import PyghthouseCanvas
+from ._thread import PHThread
+from .connection.wsconnector import VerbosityLevel
 
-from pyghthouse.data.canvas import PyghthouseCanvas
-from pyghthouse.connection.wsconnector import WSConnector
-
-
-class VerbosityLevel(Enum):
-    NONE = 0
-    WARN_ONCE = 1
-    WARN = 2
-    ALL = 3
-
-
+# TODO: Adjust example for more clarity
 class Pyghthouse:
     """
     A Python Lighthouse adapter.
@@ -34,23 +24,24 @@ class Pyghthouse:
 
     token: str
         A valid API token belonging to the user name. This is *not* your password. To obtain a token, login to
-        lighthouse.uni-kiel.de, open the top-left rollover menu and click "API-Token anzeigen".
+        lighthouse.uni-kiel.de, open the rollover menu "API Token" on the right side and click "Reveal Token" or use
+        the copy button next to it.
 
     address: str (optional, default: "wss://lighthouse.uni-kiel.de/websocket")
         URI of the WebSocket endpoint. You should not need to change this.
 
     frame_rate: float (optional; 0 < frame_rate <= 60, default: 30)
-        Rate in 1/sec at which frames (images) are automatically sent to the lighthouse server. Also determines how
-        often the image_callback function is called.
+        Rate in 1/sec at which frames (images) are automatically sent to the lighthouse server. Also determines the
+        rate of how often the image_callback function is called.
 
     image_callback: function (optional)
-        A function that takes no arguments and generates a valid lighthouse image (cf Image Format). If set, this
-        function is called before an image is sent and is used to determine said image.
+        Takes a function with no arguments and generates a valid lighthouse image. If set, this function is called
+        to generate an image for sending each frame.
         The function is guaranteed to be called frame_rate times each second *unless* its execution takes longer than
         1/frame_rate seconds, in which case execution will be slowed down accordingly.
 
     verbosity: pyghthouse.VerbosityLevel (optional, default: pyghthouse.VerbosityLevel.WARN_ONCE)
-        How many reply messages from the server are printed to the console.
+        How many log messages and reply messages from the server are printed to the console.
         Options:
         pyghthouse.VerbosityLevel.NONE:
             All messages are suppressed.
@@ -59,7 +50,7 @@ class Pyghthouse:
         pyghthouse.VerbosityLevel.WARN:
             Print all warnings.
         pyghthouse.VerbosityLevel.ALL:
-            Print all messages.
+            Print all log and reply messages.
 
     Image Format
     ------------
@@ -75,8 +66,8 @@ class Pyghthouse:
     Each color channel has a depth of 8 bits, i.e. is represented by a number between 0 and 255, inclusively. For
     instance, [255, 127, 0] is 100% red, 50% green and 0% blue, a.k.a. orange.
 
-    Images can be either flat or nested lists, as long as they have 14*28*3=1176 elements overall. The
-    Pyghthouse.empty_image() method returns a completely black image in the nested format, i.e.
+    Images are nested lists with 14*28*3=1176 elements overall. The Pyghthouse.empty_image() method returns a 
+    completely black image in the nested format, i.e.
     [
       [
         [0, 0, 0,],
@@ -91,166 +82,215 @@ class Pyghthouse:
       ]
     ]
 
+    Example
+    ------------
     The following example creates a Pyghthouse and sets the 10th window of the 11th floor to orange.
     >>> from pyghthouse import Pyghthouse
     >>> p = Pyghthouse("YourUsername", "YourToken")
-    >>> p.start() # not necessary to set image, but necessary for sending.
+    >>> p.start() # necessary to set image and for sending.
     >>> img = Pyghthouse.empty_image()
     >>> img[3][9] = [255, 127, 0]
     >>> p.set_image(img)
-
-    Full Example
-    ------------
-    The following program renders a white dot that can be moved by up, down, left and right by typing W, S, A and D,
-    respectively (and pressing ENTER).
-
-    >>> from pyghthouse import Pyghthouse, VerbosityLevel
-    >>> UNAME = "YourUsername"
-    >>> TOKEN = "YourToken"
-    >>> 
-    >>> def clip(val, min_val, max_val):
-    >>>     if val < min_val:
-    >>>         return min_val
-    >>>     if val > max_val:
-    >>>         return max_val
-    >>>     return val
-    >>>
-    >>> x = 0
-    >>> y = 0
-    >>> p = Pyghthouse(UNAME, TOKEN, verbosity=VerbosityLevel.NONE)
-    >>> p.start()
-    >>> while True:
-    >>>     img = p.empty_image()
-    >>>     img[y][x] = [255, 255, 255]
-    >>>     p.set_image(img)
-    >>>     s = input()
-    >>>     for c in s.upper():
-    >>>         if c == 'A':
-    >>>             x -= 1
-    >>>         elif c == 'D':
-    >>>             x += 1
-    >>>         elif c == 'W':
-    >>>             y -= 1
-    >>>         elif c == 'S':
-    >>>             y += 1
-    >>>     x = clip(x, 0, 27)
-    >>>     y = clip(y, 0, 13)
+    >>> p.wait() # ensures sending of the last image set by *set_image*
 
     There are more code examples in the git repository 
     (https://github.com/ProjectLighthouseCAU/pyghthouse/tree/master/examples).
     """
 
-    class PHMessageHandler:
-
-        def __init__(self, verbosity=VerbosityLevel.WARN_ONCE):
-            self.verbosity = verbosity
-            self.warned_already = False
-
-        def reset(self):
-            self.warned_already = False
-
-        def handle(self, msg):
-            if msg['RNUM'] == 200:
-                if self.verbosity == VerbosityLevel.ALL:
-                    print(msg)
-            elif self.verbosity == VerbosityLevel.WARN:
-                self.print_warning(msg)
-            elif self.verbosity == VerbosityLevel.WARN_ONCE and not self.warned_already:
-                self.print_warning(msg)
-                self.warned_already = True
-
-        @staticmethod
-        def print_warning(msg):
-            print(f"Warning: {msg['RNUM']} {msg['RESPONSE']} {', '.join(msg['WARNINGS'])}")
-
-    class PHThread(Thread):
-
-        def __init__(self, parent):
-            super().__init__()
-            self.parent = parent
-            self._stop_event = Event()
-
-        def stop(self):
-            self._stop_event.set()
-
-        def stopped(self):
-            return self._stop_event.is_set()
-
-        def run(self):
-            while not self.stopped():
-                with self.parent.config_lock:
-                    sleep_time = self.parent.send_interval - (time() % self.parent.send_interval)
-                    sleep(sleep_time)
-                    if self.parent.image_callback is not None:
-                        image_from_callback = self.parent.image_callback()
-                        self.parent.set_image(image_from_callback)
-                    self.parent.connector.send(self.parent.canvas.get_image_bytes())
-
     def __init__(self, username: str, token: str, address: str = "wss://lighthouse.uni-kiel.de/websocket",
                  frame_rate: float = 30.0, image_callback=None, verbosity=VerbosityLevel.WARN_ONCE,
                  ignore_ssl_cert=False):
-        if frame_rate > 60.0 or frame_rate <= 0:
-            raise ValueError("Frame rate must be greater than 0 and at most 60.")
-        self.username = username
-        self.token = token
-        self.address = address
-        self.send_interval = 1.0 / frame_rate
-        self.image_callback = image_callback
+        
         self.canvas = PyghthouseCanvas()
-        self.msg_handler = self.PHMessageHandler(verbosity)
-        self.connector = WSConnector(username, token, address, on_msg=self.msg_handler.handle,
-                                     ignore_ssl_cert=ignore_ssl_cert)
-        self.config_lock = Lock()
-        self.ph_thread = None
-        signal(SIGINT, self._handle_sigint)
 
-    def connect(self):
-        self.connector.start()
+        """
+        The timeout of the lamp controllers is 5 seconds, so to prevent unexpected behaviour of the light
+        installation, our libraries timeout needs to be faster than the timeout of our lamp controller.
+        To be more precise, we need to be faster than:
+        (socket) timeout + send_interval + network delay < 5
+        
+        The socket timeout consists of the full send process from the libraries websocket thread to our model server
+        beacon. So for the network delay, we only need to consider the streaming of the model inside the Lighthouse 
+        infrastructure. 
+        We can approximate this delay to a range from 0.1 to 0.5 seconds,
+        depending on the servers load.
+
+        With a frame rate of 0.5, we get a send_interval of 2 seconds.
+
+        So we get a total worst-case of:
+        (socket) timeout + send_interval + network delay = total delay
+                2.5      +      2.0      +      0.5      ~    5.0
+        """
+        if frame_rate <= 0.5 or frame_rate > 60.0:
+            raise ValueError("Frame rate must be greater than 0.5 and at most 60.")
+        
+        self.send_interval = 1.0 / frame_rate
+        self.timeout = 2.5
+        
+        self.ph_thread = PHThread(self.send_interval, image_callback, self.canvas,
+                                  username, token, address, verbosity, ignore_ssl_cert, self.timeout)
+
 
     def start(self):
-        if not self.connector.running:
-            self.connect()
-        self.stop()
-        self.msg_handler.reset()
-        self.ph_thread = self.PHThread(self)
-        self.ph_thread.start()
+        """
+        Starts Pyghthouse routine.
 
-    def stop(self):
-        if self.ph_thread is not None:
-            self.ph_thread.stop()
-            self.ph_thread.join()
+        The pyghthouse routine can only be started once. A RuntimeError will be raised when trying to start an already
+        running instance of pyghthouse, causing the running instance to be stopped.
+        """
+        if not self.ph_thread.connected.is_set():
+            self.ph_thread.start()
+            
+            # Wait is not optional due to error checking of other functions
+            if not self.ph_thread.connected.wait(self.timeout + 0.3):
+                raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
+        
+        else:
+            self.stop()
+            raise RuntimeError("Pyghthouse can only be started once.")
 
-    def close(self):
-        self.stop()
-        self.connector.stop()
 
     def set_image(self, image):
-        with self.connector.lock:
-            self.canvas.set_image(image)
+        """
+        Sets pyghthouse canvas to a new image.
 
-    def get_image(self):
-        return self.get_image_raw().tolist()
+        This function overwrites the old image. Only the newest image will be converted to a frame by the pyghthouse
+        routine. To prevent the loss of an image, use **wait()** after **set_image()** call.
 
-    def get_image_raw(self):
-        with self.connector.lock:
-            return self.canvas.image
+        Raises a RuntimeError upon trying to set an image when no pyghthouse routine is running.
 
-    @staticmethod
-    def empty_image_raw():
-        return np.zeros((14, 28, 3))
+        :param image: A 3D array where every entry is accessed via image[y][x][rgb].
+                      The dimension sizes are 14x28x3, meaning the last entry should be accessed with image[13][27][2].
+                      RGB entries only allow values in a range of 0 to 255 (one byte).
+        """
+        if not self._routine_is_running():
+            raise RuntimeError("Cannot set an image before Pyghthouse has started.")
+        
+        self.canvas.set_image(image)
+
+
+    def wait(self):
+        """
+        Wait for finalization of the current frame.
+
+        This function blocks the called thread until the current frame has been constructed.
+
+        Recommended to prevent skipping/losing of important frames. 
+
+        **set_image()** sets the image as fast as possible. On the other hand, the pyghthouse routine creates a frame
+        every 1/frame_rate seconds with the last image set.
+        This will result into skipping/losing images, when we create our images faster than the frame rate.
+        To prevent the loss of an image, we use **wait()** to wait until the current frame has been finalized, so we
+        can guarantee that the last image set will be send.
+        
+        **Do not use for fast interactive games** because waiting can result into delayed or ignored inputs! 
+        For fast interactive games it is recommended to set the image as soon as an input is received.
+        """
+        if not self._routine_is_running():
+            raise RuntimeError("Cannot wait without a Pyghthouse routine running.")
+        
+        self.ph_thread.ready.clear()
+
+        if not self.ph_thread.ready.wait(self.timeout + self.send_interval + 0.2):
+            raise RuntimeError("Unexpected behaviour. Reached wait timeout before socket timeout.")
+
+
+    def keep_running(self):
+        """
+        Keeps the main thread alive.
+
+        This function blocks the main thread. This will keep the pyghthouse routine running.
+
+        Recommended for the use of callback functions which should run until error or keyboard interrupt.
+        """
+        while self._routine_is_running():
+            self.wait()
+
+
+    def stop(self):
+        """
+        Stops Pyghthouse routine.
+
+        Stops the Pyghthouse routine and closes the websocket connection. All threads used by Pyghthouse will be
+        stopped in the process. This process can take more time with lower frame rate.
+
+        When Pyghthouse isn't running, no changes will be made.
+        """
+        if self.ph_thread.connected.is_set():
+            self.ph_thread.stop()
+
 
     @staticmethod
     def empty_image():
-        return Pyghthouse.empty_image_raw().tolist()
+        """
+        Returns an empty image.
 
-    def set_image_callback(self, image_callback):
-        with self.config_lock:
-            self.image_callback = image_callback
+        An empty image is a fully black image, meaning every RGB value is set to 0. 
+        """
+        return [[[0 for k in range(3)] for j in range(28)] for i in range(14)]
 
-    def set_frame_rate(self, frame_rate):
-        with self.config_lock:
-            self.send_interval = 1.0 / frame_rate
 
-    def _handle_sigint(self, sig, frame):
-        self.close()
-        raise SystemExit(0)
+    def get_image(self):
+        """
+        Returns a copy of the current canvas image.
+        """
+        return self.canvas.copy_image()
+
+    
+    def set_image_callback(self, image_callback=None):
+        """
+        Sets a new callback function for image creation.
+
+        This function is async to the pyghthouse routine, so non-deterministic behaviour is possible.
+
+        To prevent image loss, it is recommended to synchronize with the pyghthouse routine by using **wait()** for x
+        times where x is the amount of images send before calling this function.
+
+        When the image_callback is set to *None*, the Pyghthouse routine will stop using the callback function for 
+        image generation. 
+        """
+        self.ph_thread.callback = image_callback
+
+
+    def _routine_is_running(self):
+        # Check for errors
+        if self.ph_thread.error.is_set():
+            raise self.ph_thread.exception
+        
+        if self.ph_thread.connector.error.is_set():
+            raise self.ph_thread.connector.exception
+        
+        # Check if Pyghthouse routine is running
+        return self.ph_thread.connected.is_set()
+
+
+    ## Support of old features ##
+
+    def close(self):
+        """
+        Same as **stop()**. 
+        
+        Stops Pyghthouse routine.
+
+        Stops the Pyghthouse routine and closes the websocket connection. All threads used by Pyghthouse will be
+        stopped in the process. This process can take more time with lower frame rate.
+
+        When Pyghthouse isn't running, no changes will be made.
+        """
+        self.stop()
+
+
+    def set_frame_rate(self, frame_rate:float):
+        """
+        Set frame_rate to a new value.
+
+        The frame_rate must be greater than 0.5 and at most 60.
+
+        This function executes asynchronous to the pyghthouse routine. It's not possible to guarantee a deterministic
+        behaviour of this function.
+        """
+        if frame_rate <= 0.5 or frame_rate > 60.0:
+            self.stop()
+            raise ValueError("frame rate must be greater than 0.5 and at most 60.")
+        
+        self.ph_thread.send_interval = 1.0 / frame_rate

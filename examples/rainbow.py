@@ -4,9 +4,15 @@ from config import UNAME, TOKEN
 
 
 def rainbow_generator():
+    image = Pyghthouse.empty_image()
     while True:
         for i in range(180):
-            yield [from_hsv((i / 180 + j / (14 * 28)) % 1.0, 1.0, 1.0) for j in range(14 * 28)]
+            for x in range(28):
+                for y in range(14):
+                    j = x + y*28
+                    image[y][x] = from_hsv((i / 180 + j / (14 * 28)) % 1.0, 1.0, 1.0)
+            yield image
+
 
 
 rainbow = rainbow_generator()
@@ -20,4 +26,4 @@ if __name__ == '__main__':
     p = Pyghthouse(UNAME, TOKEN, image_callback=callback)
     print("Starting... use CTRL+C to stop.")
     p.start()
-
+    p.keep_running()
